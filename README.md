@@ -1,6 +1,6 @@
 # ElimuPlan: CBC Scheme of Work Generator
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Araptoo/generated-app-20250924-110355)
 
 ElimuPlan is a visually stunning and intuitive web application designed for Kenyan educators. It streamlines the creation of CBC (Competency-Based Curriculum) Schemes of Work by intelligently parsing curriculum design documents from a provided Google Drive link. The application features a minimalist, clean interface that guides the user through a simple three-step process: inputting a link, customizing parameters like term and weeks, and generating a beautifully formatted, ready-to-use Scheme of Work.
 
@@ -101,7 +101,7 @@ This project is designed for seamless deployment to the Cloudflare ecosystem.
 
 Alternatively, you can deploy directly from your GitHub repository with a single click.
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Araptoo/generated-app-20250924-110355)
 
 ## Contributing
 
