@@ -1,30 +1,547 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script>
-        window.addEventListener('error', (event) => {
-          const isOurAppError = event.filename && event.filename.startsWith(window.location.origin);
-          if (isOurAppError) {
-            navigator.sendBeacon('/api/client-errors', JSON.stringify({
-              message: event.message,
-              url: window.location.href,
-              userAgent: navigator.userAgent,
-              source: event.filename,
-              lineno: event.lineno,
-              colno: event.colno,
-              stack: event.error ? event.error.stack : null,
-              timestamp: new Date().toISOString()
-            }));
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KICD Scheme of Work Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; color: #333; line-height: 1.6; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    h1 { text-align: center; color: #1a5276; margin-bottom: 30px; font-size: 2em; }
+    h2 { color: #1a5276; margin-bottom: 15px; font-size: 1.4em; }
+    h3 { color: #555; margin-bottom: 10px; font-size: 1.1em; }
+    .card { background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+    .form-group { display: flex; flex-direction: column; }
+    label { font-weight: 600; margin-bottom: 5px; color: #555; font-size: 0.9em; }
+    input, select, textarea { padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 0.95em; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #3498db; }
+    button { padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.95em; font-weight: 600; transition: all 0.3s; }
+    .btn-primary { background: #3498db; color: white; }
+    .btn-primary:hover { background: #2980b9; }
+    .btn-success { background: #27ae60; color: white; }
+    .btn-success:hover { background: #219a52; }
+    .btn-secondary { background: #95a5a6; color: white; }
+    .btn-secondary:hover { background: #7f8c8d; }
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+    #progressContainer { display: none; margin: 20px 0; }
+    .progress-bar { width: 100%; height: 25px; background: #ecf0f1; border-radius: 12px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #3498db, #2ecc71); width: 0%; transition: width 0.4s; border-radius: 12px; }
+    .progress-text { text-align: center; margin-top: 8px; font-weight: 600; color: #555; }
+    #loadingIndicator { display: none; text-align: center; padding: 40px; }
+    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .error { background: #e74c3c; color: white; padding: 12px; border-radius: 5px; margin: 10px 0; display: none; }
+    .success { background: #27ae60; color: white; padding: 12px; border-radius: 5px; margin: 10px 0; display: none; }
+    .school-header { border: 2px solid #1a5276; padding: 20px; border-radius: 8px; margin-bottom: 20px; background: #f8f9fa; }
+    .school-header-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+    .term-breaks { border: 1px solid #ddd; padding: 15px; border-radius: 5px; margin-top: 15px; background: #fafafa; }
+    .break-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .break-row input { padding: 6px; }
+    .btn-small { padding: 6px 12px; font-size: 0.85em; }
+    .btn-danger { background: #e74c3c; color: white; }
+    .btn-danger:hover { background: #c0392b; }
+    #schemeTable { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.8em; }
+    #schemeTable th { background: #1a5276; color: white; padding: 10px 6px; text-align: center; border: 1px solid #154360; font-weight: 600; }
+    #schemeTable td { border: 1px solid #bbb; padding: 6px; vertical-align: top; min-height: 40px; }
+    #schemeTable tr:nth-child(even) { background: #f9f9f9; }
+    #schemeTable tr.break-row-table { background: #ffeaa7 !important; }
+    #schemeTable tr.break-row-table td { font-style: italic; text-align: center; color: #d35400; font-weight: 600; }
+    .col-wk { width: 4%; } .col-lsn { width: 4%; } .col-strand { width: 10%; } .col-substrand { width: 10%; }
+    .col-outcome { width: 14%; } .col-experience { width: 14%; } .col-inquiry { width: 10%; }
+    .col-resources { width: 10%; } .col-assessment { width: 10%; } .col-reflection { width: 10%; }
+    .editable:focus { background: #fffde7; outline: 2px solid #3498db; }
+    .hidden { display: none !important; }
+    @media print {
+      body { background: white; }
+      .no-print { display: none !important; }
+      .card { box-shadow: none; border: 1px solid #ddd; }
+      #schemeTable { font-size: 0.7em; }
+      #schemeTable th, #schemeTable td { padding: 4px; }
+      .container { max-width: 100%; padding: 0; }
+    }
+    .debug-info { background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 0.85em; color: #856404; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>KICD Scheme of Work Generator</h1>
+    
+    <div class="card no-print">
+      <h2>1. Select Curriculum</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Grade</label>
+          <select id="gradeSelect"><option value="">-- Select Grade --</option></select>
+        </div>
+        <div class="form-group">
+          <label>Subject</label>
+          <select id="subjectSelect" disabled><option value="">-- Select Subject --</option></select>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn-primary" id="loadBtn" onclick="loadCurriculum()">Load Curriculum Design</button>
+      </div>
+      <div id="progressContainer">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">Loading...</div>
+      </div>
+      <div class="error" id="errorBox"></div>
+      <div class="success" id="successBox"></div>
+    </div>
+
+    <div id="loadingIndicator">
+      <div class="spinner"></div>
+      <p>Fetching curriculum design...</p>
+    </div>
+
+    <div id="schemeContent" class="hidden">
+      <div class="card school-header">
+        <h2>2. School Information</h2>
+        <div class="school-header-grid">
+          <div class="form-group"><label>School Name</label><input type="text" id="schoolName" value="" class="editable"></div>
+          <div class="form-group"><label>School Motto</label><input type="text" id="schoolMotto" value="" class="editable"></div>
+          <div class="form-group"><label>School Address</label><input type="text" id="schoolAddress" value="" class="editable"></div>
+          <div class="form-group"><label>Teacher Name</label><input type="text" id="teacherName" value="" class="editable"></div>
+          <div class="form-group"><label>TSC No.</label><input type="text" id="tscNo" value="" class="editable"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>3. Scheme Details</h2>
+        <div class="form-grid">
+          <div class="form-group"><label>Subject</label><input type="text" id="schemeSubject" class="editable"></div>
+          <div class="form-group"><label>Grade</label><input type="text" id="schemeGrade" class="editable"></div>
+          <div class="form-group"><label>Term</label>
+            <select id="schemeTerm" class="editable"><option>Term 1</option><option>Term 2</option><option>Term 3</option></select>
+          </div>
+          <div class="form-group"><label>Year</label><input type="number" id="schemeYear" class="editable"></div>
+          <div class="form-group"><label>Number of Weeks</label><input type="number" id="numWeeks" value="13" min="1" max="20" class="editable"></div>
+        </div>
+
+        <h3 style="margin-top: 20px; margin-bottom: 10px; color: #555;">Term Breaks</h3>
+        <div id="termBreaksContainer">
+          <div class="break-row" style="font-weight: 600; color: #777;">
+            <div>Break Name</div><div>Start Week</div><div>Start Lesson</div><div>End Week</div><div>End Lesson</div><div></div>
+          </div>
+          <div id="termBreaksList"></div>
+        </div>
+        <button class="btn-secondary btn-small" onclick="addBreak()" style="margin-top: 10px;">+ Add Break</button>
+      </div>
+
+      <div class="card no-print">
+        <h2>4. Generate & Export</h2>
+        <div class="btn-group">
+          <button class="btn-success" onclick="generateScheme()">Generate Scheme of Work</button>
+          <button class="btn-primary" onclick="window.print()">Print</button>
+          <button class="btn-primary" onclick="downloadPDF()">Download PDF</button>
+        </div>
+      </div>
+
+      <div class="card" id="schemeOutput" style="display: none;">
+        <div id="schemeHeader"></div>
+        <div style="overflow-x: auto;">
+          <table id="schemeTable">
+            <thead>
+              <tr>
+                <th class="col-wk">WK</th>
+                <th class="col-lsn">LSN</th>
+                <th class="col-strand">STRAND</th>
+                <th class="col-substrand">SUB-STRAND</th>
+                <th class="col-outcome">LEARNING OUTCOMES</th>
+                <th class="col-experience">LEARNING EXPERIENCES</th>
+                <th class="col-inquiry">INQUIRY QUESTIONS</th>
+                <th class="col-resources">RESOURCES</th>
+                <th class="col-assessment">ASSESSMENT</th>
+                <th class="col-reflection">REFLECTION</th>
+              </tr>
+            </thead>
+            <tbody id="schemeBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const GITHUB_API = 'https://api.github.com/repos/Vincent-mutwiri/KICD-Curriculum-Designs/contents';
+    const RAW_BASE = 'https://raw.githubusercontent.com/Vincent-mutwiri/KICD-Curriculum-Designs/main';
+    const grades = ['Grade_4', 'Grade_5', 'Grade_6', 'Grade_7', 'Grade_8', 'Grade_9'];
+    let parsedData = null;
+    let subjectFiles = [];
+
+    function init() {
+      const gradeSelect = document.getElementById('gradeSelect');
+      grades.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g; opt.textContent = g.replace('_', ' ');
+        gradeSelect.appendChild(opt);
+      });
+      gradeSelect.addEventListener('change', onGradeChange);
+      document.getElementById('schemeYear').value = new Date().getFullYear();
+    }
+
+    async function onGradeChange() {
+      const grade = document.getElementById('gradeSelect').value;
+      const subjectSelect = document.getElementById('subjectSelect');
+      subjectSelect.innerHTML = '<option value="">-- Loading... --</option>';
+      subjectSelect.disabled = true;
+      if (!grade) { subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>'; return; }
+      try {
+        const res = await fetch(`${GITHUB_API}/${grade}`);
+        if (!res.ok) throw new Error('Failed to fetch subjects');
+        const data = await res.json();
+        subjectFiles = data.filter(f => f.type === 'file' && f.name.endsWith('.md')).sort((a, b) => a.name.localeCompare(b.name));
+        subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+        subjectFiles.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f.name; opt.textContent = f.name.replace('.md', '');
+          subjectSelect.appendChild(opt);
+        });
+        subjectSelect.disabled = false;
+      } catch (err) {
+        subjectSelect.innerHTML = '<option value="">-- Error loading --</option>';
+        showError(err.message);
+      }
+    }
+
+    async function loadCurriculum() {
+      const grade = document.getElementById('gradeSelect').value;
+      const subject = document.getElementById('subjectSelect').value;
+      if (!grade || !subject) { showError('Please select both grade and subject'); return; }
+      const file = subjectFiles.find(f => f.name === subject);
+      if (!file) { showError('Subject file not found'); return; }
+      showLoading(true);
+      showProgress(true, 0, 'Fetching curriculum design...');
+      try {
+        await delay(300);
+        updateProgress(30, 'Downloading file...');
+        const res = await fetch(file.download_url);
+        if (!res.ok) throw new Error('Failed to download file');
+        const text = await res.text();
+        updateProgress(60, 'Parsing content...');
+        await delay(200);
+        parsedData = parseCurriculum(text, subject.replace('.md', ''));
+        updateProgress(100, 'Complete!');
+        await delay(400);
+        showProgress(false);
+        const gradeNum = grade.replace('Grade_', '');
+        populateSchemeDetails(gradeNum, parsedData.subject);
+        document.getElementById('schemeContent').classList.remove('hidden');
+        document.getElementById('schemeContent').scrollIntoView({ behavior: 'smooth' });
+        showSuccess(`Loaded: ${parsedData.subject} - ${parsedData.strands.length} strands found`);
+      } catch (err) {
+        showError('Error: ' + err.message);
+        showProgress(false);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function parseCurriculum(text, filename) {
+      const subject = cleanSubjectName(filename);
+      const gradeMatch = filename.match(/Grade\s*(\d+)/i);
+      const gradeNum = gradeMatch ? gradeMatch[1] : '';
+      const lines = text.split('\n');
+      const strands = [];
+      let currentStrand = null;
+      let currentSubStrand = null;
+      
+      const strandRegex = /^STRAND\s+([\d.]+)\s*[:\-]\s*(.+)/i;
+      const subStrandRegex = /^\|?\s*\*?\*?([\d.]+)\s+([^|*]+?)\s*\*?\*?(?:\s*\((\d+)\s*lessons?\))?/;
+      const outcomeHeaderRegex = /By the end of (?:the )?(sub-?strand|lesson|strand)/i;
+      const experienceHeaderRegex = /(?:The learner|Learners) are guided to:/i;
+      const questionHeaderRegex = /Suggested Key Inquiry Questions?/i;
+      
+      let mode = 'normal'; // normal, outcomes, experiences, questions
+      let currentOutcomes = [];
+      let currentExperiences = [];
+      let currentQuestions = [];
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmed = line.trim();
+        
+        if (trimmed.match(/^[-:|]\s*[-:|]/)) continue;
+        if (trimmed.startsWith('![image')) continue;
+        if (trimmed === '**' || trimmed === '***') continue;
+        if (trimmed.match(/^page\s+\d+/i)) continue;
+        
+        const strandMatch = trimmed.match(strandRegex);
+        if (strandMatch) {
+          if (currentSubStrand) {
+            currentStrand.subStrands.push(createSubStrand(currentSubStrand, currentOutcomes, currentExperiences, currentQuestions));
+            currentOutcomes = []; currentExperiences = []; currentQuestions = [];
           }
-        }, true);
-    </script>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+          if (currentStrand) strands.push(currentStrand);
+          currentStrand = { number: strandMatch[1], title: strandMatch[2].trim(), subStrands: [] };
+          currentSubStrand = null;
+          mode = 'normal';
+          continue;
+        }
+        
+        const subMatch = trimmed.match(subStrandRegex);
+        if (subMatch && currentStrand && !trimmed.startsWith('|') && !trimmed.startsWith('!')) {
+          if (currentSubStrand) {
+            currentStrand.subStrands.push(createSubStrand(currentSubStrand, currentOutcomes, currentExperiences, currentQuestions));
+            currentOutcomes = []; currentExperiences = []; currentQuestions = [];
+          }
+          const lessons = subMatch[3] || '';
+          currentSubStrand = { number: subMatch[1], title: subMatch[2].replace(/\(.*?\)/g, '').trim(), lessons: lessons };
+          mode = 'normal';
+          continue;
+        }
+        
+        if (outcomeHeaderRegex.test(trimmed)) {
+          mode = 'outcomes'; continue;
+        }
+        if (experienceHeaderRegex.test(trimmed)) {
+          mode = 'experiences'; continue;
+        }
+        if (questionHeaderRegex.test(trimmed)) {
+          mode = 'questions'; continue;
+        }
+        
+        if (trimmed.startsWith('|')) {
+          const cells = trimmed.split('|').filter((c, idx, arr) => idx > 0 && idx < arr.length - 1).map(c => c.trim());
+          if (cells.length >= 3 && cells.some(c => c.includes('Learning Outcomes') || c.includes('Learning Experiences') || c.includes('Inquiry'))) {
+            continue;
+          }
+          if (cells.length >= 2 && !cells[0].match(/^:?-+:?$/)) {
+            if (mode === 'outcomes') currentOutcomes.push(cells.join(' | '));
+            else if (mode === 'experiences') currentExperiences.push(cells.join(' | '));
+            else if (mode === 'questions') currentQuestions.push(cells.join(' | '));
+          }
+          continue;
+        }
+        
+        if (trimmed === '' || trimmed.startsWith('**') && trimmed.endsWith('**') && trimmed.length < 50) {
+          if (trimmed.match(/^(Core Competencies|Values|Pertinent|Link to other|Suggested Assessment)/i)) {
+            mode = 'normal';
+          }
+          continue;
+        }
+        
+        if (mode === 'outcomes' && trimmed && !trimmed.startsWith('**')) {
+          currentOutcomes.push(trimmed);
+        } else if (mode === 'experiences' && trimmed && !trimmed.startsWith('**')) {
+          currentExperiences.push(trimmed);
+        } else if (mode === 'questions' && trimmed && !trimmed.startsWith('**')) {
+          if (trimmed.match(/^\d+\./)) currentQuestions.push(trimmed.replace(/^\d+\.\s*/, ''));
+        }
+      }
+      
+      if (currentSubStrand && currentStrand) {
+        currentStrand.subStrands.push(createSubStrand(currentSubStrand, currentOutcomes, currentExperiences, currentQuestions));
+      }
+      if (currentStrand) strands.push(currentStrand);
+      
+      const resources = ['Textbooks', 'Charts', 'Maps', 'Digital devices', 'Real objects', 'Print media'];
+      const assessment = ['Observation', 'Question and Answer', 'Written Exercise', 'Practical Exercise', 'Group Work', 'Oral Questions'];
+      
+      return { subject, grade: gradeNum, strands, resources, assessment };
+    }
+
+    function createSubStrand(sub, outcomes, experiences, questions) {
+      return {
+        number: sub.number,
+        title: sub.title,
+        lessons: sub.lessons,
+        outcomes: outcomes.length > 0 ? outcomes : ['Complete all activities in this sub-strand'],
+        experiences: experiences.length > 0 ? experiences : ['Follow teacher guidance and participate actively'],
+        questions: questions.length > 0 ? questions : ['']
+      };
+    }
+
+    function cleanSubjectName(name) {
+      return name
+        .replace(/\s*Grade\s*\d+\s*/gi, '')
+        .replace(/\s*-\s*(Revised|Proofread|Final|July|January|February|March|April|May|June|August|October|November|December).*/gi, '')
+        .replace(/\s*\d{4}\s*/g, '')
+        .replace(/\s*-\s*$/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function populateSchemeDetails(grade, subject) {
+      document.getElementById('schemeSubject').value = subject;
+      document.getElementById('schemeGrade').value = `Grade ${grade}`;
+      document.getElementById('termBreaksList').innerHTML = '';
+      addBreak('Midterm', '', '', '', '');
+      addBreak('Exams', '', '', '', '');
+    }
+
+    function addBreak(name, sw, sl, ew, el) {
+      const container = document.getElementById('termBreaksList');
+      const row = document.createElement('div');
+      row.className = 'break-row';
+      row.innerHTML = `
+        <input type="text" placeholder="Break Name" value="${name}" class="break-name editable">
+        <input type="number" placeholder="Start Wk" value="${sw}" min="1" class="break-sw editable">
+        <input type="number" placeholder="Start Lsn" value="${sl}" min="1" class="break-sl editable">
+        <input type="number" placeholder="End Wk" value="${ew}" min="1" class="break-ew editable">
+        <input type="number" placeholder="End Lsn" value="${el}" min="1" class="break-el editable">
+        <button class="btn-danger btn-small" onclick="this.parentElement.remove()">X</button>
+      `;
+      container.appendChild(row);
+    }
+
+    function generateScheme() {
+      if (!parsedData) { showError('Please load a curriculum design first'); return; }
+      const numWeeks = parseInt(document.getElementById('numWeeks').value) || 13;
+      const breaks = getBreaks();
+      const tbody = document.getElementById('schemeBody');
+      tbody.innerHTML = '';
+      
+      const allSubStrands = [];
+      parsedData.strands.forEach(strand => {
+        strand.subStrands.forEach(sub => {
+          allSubStrands.push({
+            strand: strand.number + ' ' + strand.title,
+            subStrand: sub.number + ' ' + sub.title,
+            lessons: parseInt(sub.lessons) || 1,
+            outcomes: sub.outcomes,
+            experiences: sub.experiences,
+            questions: sub.questions
+          });
+        });
+      });
+      
+      const totalLessons = allSubStrands.reduce((sum, s) => sum + s.lessons, 0);
+      let subIdx = 0;
+      let lessonInSub = 0;
+      
+      for (let week = 1; week <= numWeeks; week++) {
+        const isBreak = breaks.some(b => week >= parseInt(b.sw) && week <= parseInt(b.ew));
+        if (isBreak) {
+          const brk = breaks.find(b => week >= parseInt(b.sw) && week <= parseInt(b.ew));
+          const row = document.createElement('tr');
+          row.className = 'break-row-table';
+          row.innerHTML = `<td colspan="10">${brk.name.toUpperCase()} - Week ${week}</td>`;
+          tbody.appendChild(row);
+          continue;
+        }
+        
+        if (subIdx >= allSubStrands.length) break;
+        
+        const sub = allSubStrands[subIdx];
+        const outcomeIdx = Math.min(lessonInSub, sub.outcomes.length - 1);
+        const expIdx = Math.min(lessonInSub, sub.experiences.length - 1);
+        const qIdx = Math.min(lessonInSub, sub.questions.length - 1);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="editable">${week}</td>
+          <td class="editable">${lessonInSub + 1}</td>
+          <td class="editable">${sub.strand}</td>
+          <td class="editable">${sub.subStrand}</td>
+          <td class="editable">${sub.outcomes[outcomeIdx] || ''}</td>
+          <td class="editable">${sub.experiences[expIdx] || ''}</td>
+          <td class="editable">${sub.questions[qIdx] || ''}</td>
+          <td class="editable" contenteditable="true">${parsedData.resources[0] || ''}</td>
+          <td class="editable" contenteditable="true">${parsedData.assessment[0] || ''}</td>
+          <td class="editable" contenteditable="true"></td>
+        `;
+        tbody.appendChild(row);
+        
+        lessonInSub++;
+        if (lessonInSub >= sub.lessons) {
+          subIdx++;
+          lessonInSub = 0;
+        }
+      }
+      
+      if (allSubStrands.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 30px;">No lessons generated. Check curriculum format.</td></tr>';
+      }
+      
+      generateHeader();
+      document.getElementById('schemeOutput').style.display = 'block';
+      document.getElementById('schemeOutput').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function getBreaks() {
+      const breaks = [];
+      document.querySelectorAll('#termBreaksList .break-row').forEach(row => {
+        const name = row.querySelector('.break-name').value.trim();
+        const sw = row.querySelector('.break-sw').value.trim();
+        const ew = row.querySelector('.break-ew').value.trim();
+        if (name && sw && ew) breaks.push({ name, sw, sl: row.querySelector('.break-sl').value, ew, el: row.querySelector('.break-el').value });
+      });
+      return breaks;
+    }
+
+    function generateHeader() {
+      const schoolName = document.getElementById('schoolName').value || '[School Name]';
+      const motto = document.getElementById('schoolMotto').value || '';
+      const address = document.getElementById('schoolAddress').value || '';
+      const teacher = document.getElementById('teacherName').value || '';
+      const tsc = document.getElementById('tscNo').value || '';
+      const subject = document.getElementById('schemeSubject').value || '';
+      const grade = document.getElementById('schemeGrade').value || '';
+      const term = document.getElementById('schemeTerm').value || '';
+      const year = document.getElementById('schemeYear').value || '';
+      
+      document.getElementById('schemeHeader').innerHTML = `
+        <div style="text-align: center; border-bottom: 2px solid #1a5276; padding-bottom: 15px; margin-bottom: 15px;">
+          <h2 style="margin: 0; font-size: 1.6em; color: #1a5276;">${schoolName}</h2>
+          ${motto ? `<p style="margin: 5px 0; font-style: italic; color: #555;">"${motto}"</p>` : ''}
+          ${address ? `<p style="margin: 3px 0; color: #555; font-size: 0.9em;">${address}</p>` : ''}
+          <h3 style="margin: 10px 0 5px; color: #333;">SCHEME OF WORK</h3>
+          <p style="margin: 3px 0; font-weight: 600;">${subject} - ${grade} | ${term} ${year}</p>
+          ${teacher || tsc ? `<p style="margin: 3px 0; color: #555; font-size: 0.9em;">Teacher: ${teacher} ${tsc ? '| TSC No: ' + tsc : ''}</p>` : ''}
+        </div>
+      `;
+    }
+
+    function downloadPDF() {
+      const element = document.getElementById('schemeOutput');
+      const opt = {
+        margin: 0.3,
+        filename: `Scheme_of_Work_${document.getElementById('schemeSubject').value}_${document.getElementById('schemeGrade').value}_${document.getElementById('schemeTerm').value}_${document.getElementById('schemeYear').value}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+
+    function showError(msg) {
+      const box = document.getElementById('errorBox');
+      box.textContent = msg; box.style.display = 'block';
+      setTimeout(() => box.style.display = 'none', 5000);
+    }
+
+    function showSuccess(msg) {
+      const box = document.getElementById('successBox');
+      box.textContent = msg; box.style.display = 'block';
+      setTimeout(() => box.style.display = 'none', 5000);
+    }
+
+    function showLoading(show) {
+      document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+    }
+
+    function showProgress(show, pct, text) {
+      const container = document.getElementById('progressContainer');
+      if (show) {
+        container.style.display = 'block';
+        if (pct !== undefined) updateProgress(pct, text);
+      } else {
+        container.style.display = 'none';
+      }
+    }
+
+    function updateProgress(pct, text) {
+      document.getElementById('progressFill').style.width = pct + '%';
+      if (text) document.getElementById('progressText').textContent = text;
+    }
+
+    function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+    init();
+  </script>
+</body>
 </html>
