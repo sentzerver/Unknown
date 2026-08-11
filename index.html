@@ -622,41 +622,71 @@
       let currentSubStrand = null;
       const tables = doc.querySelectorAll('table');
       diagnostics.push({ type: 'info', msg: `Found ${tables.length} tables` });
-      tables.forEach((table, idx) => {
-        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
-        diagnostics.push({ type: 'info', msg: `Table ${idx + 1}: ${headers.join(' | ')}` });
-        if (headers.some(h => h.includes('Strand') || h.includes('Sub-Strand'))) {
-          const rows = table.querySelectorAll('tbody tr');
-          rows.forEach(row => {
-            const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
-            if (cells.length >= 2) {
-              const strandMatch = cells[0]?.match(/^(\d+\.0)\s+(.+)/i);
-              if (strandMatch) {
-                if (currentSubStrand && currentStrand) currentStrand.subStrands.push(currentSubStrand);
-                if (currentStrand) strands.push(currentStrand);
-                currentStrand = { number: strandMatch[1], title: strandMatch[2].replace(/\s*\(.*?lessons?\)\s*/i, '').trim(), subStrands: [] };
-                currentSubStrand = null;
-              }
-              const subMatch = cells[0]?.match(/^(\d+\.\d+)\s+(.+?)(?:\s*\((\d+)\s*lessons?\))?/i);
-              if (subMatch && currentStrand) {
-                if (currentSubStrand) currentStrand.subStrands.push(currentSubStrand);
-                currentSubStrand = {
-                  number: subMatch[1],
-                  title: subMatch[2].replace(/\s*\(.*?\)\s*/g, '').trim(),
-                  lessons: subMatch[3] || '',
-                  outcomes: [],
-                  experiences: [],
-                  questions: []
-                };
-                if (cells[1]) currentSubStrand.outcomes.push(cells[1]);
-                if (cells[2]) currentSubStrand.experiences.push(cells[2]);
-                if (cells[3]) currentSubStrand.questions.push(cells[3]);
-              }
-            }
-          });
+      tables.forEach((table, tableIdx) => {
+        const allRows = table.querySelectorAll('tr');
+        if (allRows.length === 0) return;
+        const firstRow = allRows[0];
+        const firstCells = Array.from(firstRow.querySelectorAll('th, td')).map(c => c.textContent.trim());
+        const hasStrandCol = firstCells.some(h => /^strand$/i.test(h) || /sub[\s-]?strand/i.test(h));
+        if (!hasStrandCol && allRows.length > 1) {
+          const secondRowCells = Array.from(allRows[1].querySelectorAll('td')).map(c => c.textContent.trim());
+          if (!secondRowCells[0]?.match(/^\d+\.0\s+/i)) return;
+        } else if (!hasStrandCol) {
+          return;
+        }
+        diagnostics.push({ type: 'info', msg: `Table ${tableIdx + 1}: ${firstCells.join(' | ')}` });
+        const strandColIdx = firstCells.findIndex(h => /^strand$/i.test(h) && !/sub/i.test(h));
+        const subStrandColIdx = firstCells.findIndex(h => /sub[\s-]?strand/i.test(h));
+        const outcomeColIdx = firstCells.findIndex(h => /outcome/i.test(h));
+        const experienceColIdx = firstCells.findIndex(h => /experience/i.test(h));
+        const questionColIdx = firstCells.findIndex(h => /inquiry|question/i.test(h));
+        const sCol = strandColIdx >= 0 ? strandColIdx : 0;
+        const ssCol = subStrandColIdx >= 0 ? subStrandColIdx : (strandColIdx >= 0 ? 1 : 0);
+        const oCol = outcomeColIdx >= 0 ? outcomeColIdx : (subStrandColIdx >= 0 ? 2 : 1);
+        const eCol = experienceColIdx >= 0 ? experienceColIdx : oCol + 1;
+        const qCol = questionColIdx >= 0 ? questionColIdx : eCol + 1;
+        for (let i = 1; i < allRows.length; i++) {
+          const row = allRows[i];
+          const cells = Array.from(row.querySelectorAll('td'));
+          if (cells.length === 0) continue;
+          const cellTexts = cells.map(c => c.textContent.trim());
+          if (cellTexts.every(t => /^[:\-]+$/.test(t))) continue;
+          if (cellTexts.every(t => !t || t.length < 2)) continue;
+          const strandText = cellTexts[sCol] || '';
+          const subStrandText = cellTexts[ssCol] || '';
+          const strandMatch = strandText.match(/^(\d+\.0)\s+(.+)/i);
+          if (strandMatch) {
+            if (currentSubStrand && currentStrand) currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
+            if (currentStrand) strands.push(currentStrand);
+            currentStrand = { number: strandMatch[1], title: strandMatch[2].replace(/\s*\(.*?lessons?\)\s*/i, '').trim(), subStrands: [] };
+            currentSubStrand = null;
+          }
+          const subMatch = subStrandText.match(/^(\d+\.\d+)\s+(.+?)(?:\s*\((\d+)\s*lessons?\))?/i);
+          if (subMatch && currentStrand) {
+            if (currentSubStrand) currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
+            currentSubStrand = {
+              number: subMatch[1],
+              title: subMatch[2].replace(/\s*\(.*?\)\s*/g, '').trim(),
+              lessons: subMatch[3] || '',
+              rawOutcomes: [],
+              rawExperiences: [],
+              rawQuestions: []
+            };
+            if (oCol < cellTexts.length && cellTexts[oCol]) currentSubStrand.rawOutcomes.push(cellTexts[oCol]);
+            if (eCol < cellTexts.length && cellTexts[eCol]) currentSubStrand.rawExperiences.push(cellTexts[eCol]);
+            if (qCol < cellTexts.length && cellTexts[qCol]) currentSubStrand.rawQuestions.push(cellTexts[qCol]);
+          } else if (currentSubStrand) {
+            if (oCol < cellTexts.length && cellTexts[oCol]) currentSubStrand.rawOutcomes.push(cellTexts[oCol]);
+            if (eCol < cellTexts.length && cellTexts[eCol]) currentSubStrand.rawExperiences.push(cellTexts[eCol]);
+            if (qCol < cellTexts.length && cellTexts[qCol]) currentSubStrand.rawQuestions.push(cellTexts[qCol]);
+          }
+        }
+        if (currentSubStrand && currentStrand) {
+          currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
+          currentSubStrand = null;
         }
       });
-      if (currentSubStrand && currentStrand) currentStrand.subStrands.push(currentSubStrand);
+      if (currentSubStrand && currentStrand) currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
       if (currentStrand) strands.push(currentStrand);
       diagnostics.push({ type: 'success', msg: `Parsed ${strands.length} strands, ${strands.reduce((sum, s) => sum + s.subStrands.length, 0)} sub-strands` });
       const resources = extractFromTables(tables, 'Resources') || ['Textbooks', 'Charts', 'Maps', 'Digital devices'];
@@ -664,9 +694,65 @@
       return { subject, grade: '', strands, resources, assessment, tablesFound: tables.length };
     }
 
+    function finalizeSubStrand(sub) {
+      return {
+        number: sub.number,
+        title: sub.title,
+        lessons: sub.lessons,
+        outcomes: splitItems(sub.rawOutcomes.join('\n')),
+        experiences: splitItems(sub.rawExperiences.join('\n')),
+        questions: splitQuestions(sub.rawQuestions.join('\n'))
+      };
+    }
+
+    function splitItems(text) {
+      if (!text) return [];
+      text = text.replace(/^By the end of (?:the )?(?:sub-?strand|lesson|strand)[^:]*:\s*/i, '');
+      text = text.replace(/^(?:The learner|Learners) are guided to:\s*/i, '');
+      text = text.replace(/^By the end of Junior School, the learner should be able to:\s*/i, '');
+      const items = [];
+      const lines = text.split('\n').map(s => s.trim()).filter(s => s.length > 3);
+      lines.forEach(line => {
+        const bulletParts = line.split(/(?=[\s]*[●•]\s)/).map(s => s.trim()).filter(s => s.length > 3);
+        if (bulletParts.length > 1) {
+          items.push(...bulletParts);
+        } else {
+          const letterParts = line.split(/(?=[\s]*[a-z]\)\s)/i).map(s => s.trim()).filter(s => s.length > 3);
+          if (letterParts.length > 1) {
+            items.push(...letterParts);
+          } else {
+            items.push(line);
+          }
+        }
+      });
+      return [...new Set(items)].slice(0, 20);
+    }
+
+    function splitQuestions(text) {
+      if (!text) return [];
+      text = text.replace(/^Suggested Key Inquiry Questions?\s*/i, '');
+      const items = [];
+      const regex = /(\d+\.\s*[^\d\n]+)/g;
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        items.push(match[1].trim());
+      }
+      if (items.length === 0) {
+        const lines = text.split('\n').map(s => s.trim()).filter(s => s.length > 3);
+        return lines.slice(0, 10);
+      }
+      return items;
+    }
+
     function extractFromTables(tables, keyword) {
       for (const table of tables) {
         const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+        if (headers.length === 0) {
+          const firstRow = table.querySelector('tr');
+          if (firstRow) {
+            Array.from(firstRow.querySelectorAll('th, td')).forEach(c => headers.push(c.textContent.trim()));
+          }
+        }
         const keywordIdx = headers.findIndex(h => h.toLowerCase().includes(keyword.toLowerCase()));
         if (keywordIdx >= 0) {
           const items = [];
