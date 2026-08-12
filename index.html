@@ -622,36 +622,35 @@
       let currentSubStrand = null;
       const tables = doc.querySelectorAll('table');
       diagnostics.push({ type: 'info', msg: `Found ${tables.length} tables` });
+
       tables.forEach((table, tableIdx) => {
         const allRows = table.querySelectorAll('tr');
         if (allRows.length === 0) return;
-        const firstRow = allRows[0];
-        const firstCells = Array.from(firstRow.querySelectorAll('th, td')).map(c => c.textContent.trim());
-        const hasStrandCol = firstCells.some(h => /^strand$/i.test(h) || /sub[\s-]?strand/i.test(h));
+
+        const headerCells = Array.from(allRows[0].querySelectorAll('th, td')).map(c => c.textContent.trim());
+        const hasStrandCol = headerCells.some(h => /^strand$/i.test(h) || /sub[\s-]?strand/i.test(h));
         if (!hasStrandCol && allRows.length > 1) {
-          const secondRowCells = Array.from(allRows[1].querySelectorAll('td')).map(c => c.textContent.trim());
-          if (!secondRowCells[0]?.match(/^\d+\.0\s+/i)) return;
+          const probe = Array.from(allRows[1].querySelectorAll('td')).map(c => c.textContent.trim());
+          if (!probe[0]?.match(/^\d+\.0\s+/i)) return;
         } else if (!hasStrandCol) {
           return;
         }
-        diagnostics.push({ type: 'info', msg: `Table ${tableIdx + 1}: ${firstCells.join(' | ')}` });
-        const strandColIdx = firstCells.findIndex(h => /^strand$/i.test(h) && !/sub/i.test(h));
-        const subStrandColIdx = firstCells.findIndex(h => /sub[\s-]?strand/i.test(h));
-        const outcomeColIdx = firstCells.findIndex(h => /outcome/i.test(h));
-        const experienceColIdx = firstCells.findIndex(h => /experience/i.test(h));
-        const questionColIdx = firstCells.findIndex(h => /inquiry|question/i.test(h));
-        const sCol = strandColIdx >= 0 ? strandColIdx : 0;
-        const ssCol = subStrandColIdx >= 0 ? subStrandColIdx : (strandColIdx >= 0 ? 1 : 0);
-        const oCol = outcomeColIdx >= 0 ? outcomeColIdx : (subStrandColIdx >= 0 ? 2 : 1);
-        const eCol = experienceColIdx >= 0 ? experienceColIdx : oCol + 1;
-        const qCol = questionColIdx >= 0 ? questionColIdx : eCol + 1;
+
+        diagnostics.push({ type: 'info', msg: `Table ${tableIdx + 1}: ${headerCells.join(' | ')}` });
+
+        const sCol = Math.max(0, headerCells.findIndex(h => /^strand$/i.test(h) && !/sub/i.test(h)));
+        const ssCol = Math.max(0, headerCells.findIndex(h => /sub[\s-]?strand/i.test(h)));
+        const oCol = Math.max(0, headerCells.findIndex(h => /outcome/i.test(h)));
+        const eCol = Math.max(0, headerCells.findIndex(h => /experience/i.test(h)));
+        const qCol = Math.max(0, headerCells.findIndex(h => /inquiry|question/i.test(h)));
+
         for (let i = 1; i < allRows.length; i++) {
           const row = allRows[i];
           const cells = Array.from(row.querySelectorAll('td'));
           if (cells.length === 0) continue;
           const cellTexts = cells.map(c => c.textContent.trim());
-          if (cellTexts.every(t => /^[:\-]+$/.test(t))) continue;
-          if (cellTexts.every(t => !t || t.length < 2)) continue;
+          if (cellTexts.every(t => !t || t.length < 2 || /^[:\-]+$/.test(t))) continue;
+
           const strandText = cellTexts[sCol] || '';
           const subStrandText = cellTexts[ssCol] || '';
           const strandMatch = strandText.match(/^(\d+\.0)\s+(.+)/i);
@@ -661,6 +660,7 @@
             currentStrand = { number: strandMatch[1], title: strandMatch[2].replace(/\s*\(.*?lessons?\)\s*/i, '').trim(), subStrands: [] };
             currentSubStrand = null;
           }
+
           const subMatch = subStrandText.match(/^(\d+\.\d+)\s+(.+?)(?:\s*\((\d+)\s*lessons?\))?/i);
           if (subMatch && currentStrand) {
             if (currentSubStrand) currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
@@ -681,17 +681,72 @@
             if (qCol < cellTexts.length && cellTexts[qCol]) currentSubStrand.rawQuestions.push(cellTexts[qCol]);
           }
         }
+
         if (currentSubStrand && currentStrand) {
           currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
           currentSubStrand = null;
         }
       });
-      if (currentSubStrand && currentStrand) currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
+
+      if (currentStrand && currentSubStrand) currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
       if (currentStrand) strands.push(currentStrand);
+
       diagnostics.push({ type: 'success', msg: `Parsed ${strands.length} strands, ${strands.reduce((sum, s) => sum + s.subStrands.length, 0)} sub-strands` });
+
       const resources = extractFromTables(tables, 'Resources') || ['Textbooks', 'Charts', 'Maps', 'Digital devices'];
       const assessment = extractFromTables(tables, 'Assessment') || ['Observation', 'Q&A', 'Written Exercise', 'Practical', 'Group Work'];
+
       return { subject, grade: '', strands, resources, assessment, tablesFound: tables.length };
+    }
+
+    function finalizeSubStrand(sub) {
+      return {
+        number: sub.number,
+        title: sub.title,
+        lessons: sub.lessons,
+        outcomes: splitItems(sub.rawOutcomes.join('\n')),
+        experiences: splitItems(sub.rawExperiences.join('\n')),
+        questions: splitQuestions(sub.rawQuestions.join('\n'))
+      };
+    }
+
+    function splitItems(text) {
+      if (!text) return [];
+      text = text.replace(/^By the end of (?:the )?(?:sub-?strand|lesson|strand)[^:]*:\s*/i, '');
+      text = text.replace(/^(?:The learner|Learners) are guided to:\s*/i, '');
+      text = text.replace(/^By the end of Junior School, the learner should be able to:\s*/i, '');
+      const items = [];
+      const lines = text.split('\n').map(s => s.trim()).filter(s => s.length > 3);
+      lines.forEach(line => {
+        const bulletParts = line.split(/(?=[\s]*[●•]\s)/).map(s => s.trim()).filter(s => s.length > 3);
+        if (bulletParts.length > 1) {
+          items.push(...bulletParts);
+        } else {
+          const letterParts = line.split(/(?=[\s]*[a-z]\)\s)/i).map(s => s.trim()).filter(s => s.length > 3);
+          if (letterParts.length > 1) {
+            items.push(...letterParts);
+          } else {
+            items.push(line);
+          }
+        }
+      });
+      return [...new Set(items)].slice(0, 20);
+    }
+
+    function splitQuestions(text) {
+      if (!text) return [];
+      text = text.replace(/^Suggested Key Inquiry Questions?\s*/i, '');
+      const items = [];
+      const regex = /(\d+\.\s*[^\d\n]+)/g;
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        items.push(match[1].trim());
+      }
+      if (items.length === 0) {
+        const lines = text.split('\n').map(s => s.trim()).filter(s => s.length > 3);
+        return lines.slice(0, 10);
+      }
+      return items;
     }
 
     function finalizeSubStrand(sub) {
