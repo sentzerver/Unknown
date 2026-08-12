@@ -22,6 +22,17 @@
       --border: #ddd;
       --break-bg: #fff3cd;
       --break-text: #856404;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .dark {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #e2e8f0;
+      --text-light: #94a3b8;
+      --border: #334155;
+      --break-bg: #422006;
+      --break-text: #fcd34d;
+      --shadow: 0 2px 8px rgba(0,0,0,0.35);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -39,6 +50,9 @@
       padding: 30px 20px;
       text-align: center;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
     .app-header h1 { font-size: 2.2em; margin-bottom: 8px; font-weight: 700; }
     .app-header p { opacity: 0.9; font-size: 1.05em; }
@@ -48,17 +62,18 @@
       border-radius: 12px;
       padding: 25px;
       margin-bottom: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      border: 1px solid #e8ecf1;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
     }
     .card-title {
       font-size: 1.3em;
       color: var(--primary);
       margin-bottom: 18px;
       padding-bottom: 10px;
-      border-bottom: 2px solid #ecf0f1;
+      border-bottom: 2px solid var(--border);
       font-weight: 600;
     }
+    .dark .card-title { color: #60a5fa; border-bottom-color: #334155; }
     
     .form-grid {
       display: grid;
@@ -80,12 +95,13 @@
       border-radius: 6px;
       font-size: 0.95em;
       transition: border-color 0.2s;
-      background: white;
+      background: var(--card);
+      color: var(--text);
     }
     input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: var(--primary-light);
-      box-shadow: 0 0 0 3px rgba(41,128,185,0.1);
+      box-shadow: 0 0 0 3px rgba(41,128,185,0.15);
     }
     textarea { resize: vertical; min-height: 60px; }
     
@@ -105,8 +121,8 @@
     .btn-primary:hover { background: var(--primary); transform: translateY(-1px); }
     .btn-success { background: var(--accent); color: white; }
     .btn-success:hover { background: var(--accent-hover); transform: translateY(-1px); }
-    .btn-secondary { background: #95a5a6; color: white; }
-    .btn-secondary:hover { background: #7f8c8d; }
+    .btn-secondary { background: #64748b; color: white; }
+    .btn-secondary:hover { background: #475569; }
     .btn-danger { background: var(--danger); color: white; padding: 6px 12px; font-size: 0.85em; }
     .btn-danger:hover { background: #c0392b; }
     .btn-small { padding: 6px 14px; font-size: 0.85em; }
@@ -116,7 +132,7 @@
     .progress-bar {
       width: 100%;
       height: 24px;
-      background: #ecf0f1;
+      background: var(--border);
       border-radius: 12px;
       overflow: hidden;
       box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
@@ -146,8 +162,9 @@
       align-items: center;
       flex-direction: column;
     }
+    .dark .loading-overlay { background: rgba(15,23,42,0.95); }
     .spinner {
-      border: 5px solid #ecf0f1;
+      border: 5px solid var(--border);
       border-top: 5px solid var(--primary-light);
       border-radius: 50%;
       width: 60px;
@@ -171,12 +188,17 @@
     .success { background: #d5f4e6; color: #27ae60; border: 1px solid #abebc6; }
     .info { background: #d6eaf8; color: #2980b9; border: 1px solid #aed6f1; }
     .warning { background: #fef9e7; color: #d68910; border: 1px solid #f9e79f; }
+    .dark .error { background: #3b1518; color: #fca5a5; border-color: #7f1d1d; }
+    .dark .success { background: #143028; color: #6ee7b7; border-color: #064e3b; }
+    .dark .info { background: #0c2d48; color: #93c5fd; border-color: #1e3a8a; }
+    .dark .warning { background: #3b2e05; color: #fcd34d; border-color: #78350f; }
     
     .school-header {
       border: 2px solid var(--primary);
       background: linear-gradient(to bottom, #f8f9fa, #fff);
       position: relative;
     }
+    .dark .school-header { background: linear-gradient(to bottom, #1e293b, #0f172a); border-color: #334155; }
     .school-header::before {
       content: '';
       position: absolute;
@@ -190,7 +212,7 @@
       gap: 15px;
     }
     
-    .term-breaks { border: 1px solid #e8ecf1; padding: 20px; border-radius: 8px; background: #fafbfc; }
+    .term-breaks { border: 1px solid var(--border); padding: 20px; border-radius: 8px; background: var(--bg); }
     .break-row {
       display: grid;
       grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
@@ -198,9 +220,9 @@
       align-items: center;
       margin-bottom: 10px;
       padding: 8px;
-      background: white;
+      background: var(--card);
       border-radius: 4px;
-      border: 1px solid #eee;
+      border: 1px solid var(--border);
     }
     .break-row input { padding: 8px; font-size: 0.9em; }
     
@@ -223,9 +245,9 @@
     }
     .timeline-week.normal { background: #d5f4e6; color: #27ae60; border-color: #abebc6; }
     .timeline-week.break { background: #fef9e7; color: #d68910; border-color: #f9e79f; }
-    .timeline-week.empty { background: #ecf0f1; color: #95a5a6; border-color: #ddd; }
+    .timeline-week.empty { background: var(--border); color: var(--text-light); border-color: var(--border); }
     
-    .scheme-container { overflow-x: auto; margin-top: 20px; border-radius: 8px; border: 1px solid #ddd; }
+    .scheme-container { overflow-x: auto; margin-top: 20px; border-radius: 8px; border: 1px solid var(--border); }
     #schemeTable {
       width: 100%;
       border-collapse: collapse;
@@ -244,33 +266,36 @@
       letter-spacing: 0.3px;
     }
     #schemeTable td {
-      border: 1px solid #bbb;
+      border: 1px solid var(--border);
       padding: 8px;
       vertical-align: top;
       min-width: 100px;
       max-width: 200px;
+      background: var(--card);
+      color: var(--text);
     }
-    #schemeTable tr:nth-child(even) { background: #f9f9f9; }
-    #schemeTable tr.break-row-table { background: var(--break-bg) !important; }
+    #schemeTable tr:nth-child(even) td { background: var(--bg); }
     #schemeTable tr.break-row-table td {
       font-style: italic;
       text-align: center;
       color: var(--break-text);
       font-weight: 600;
       padding: 12px;
+      background: var(--break-bg) !important;
     }
     .editable:focus {
       background: #fffde7;
       outline: 2px solid var(--primary-light);
       outline-offset: -2px;
     }
+    .dark .editable:focus { background: #422006; }
     
     .lesson-plan {
-      border: 1px solid #ddd;
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 20px;
       margin-bottom: 15px;
-      background: white;
+      background: var(--card);
     }
     .lesson-plan-header {
       display: flex;
@@ -278,7 +303,7 @@
       align-items: center;
       margin-bottom: 15px;
       padding-bottom: 10px;
-      border-bottom: 2px solid #ecf0f1;
+      border-bottom: 2px solid var(--border);
     }
     .lesson-plan-grid {
       display: grid;
@@ -297,7 +322,7 @@
       font-size: 0.9em;
     }
     
-    .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+    .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
     .tab {
       padding: 12px 24px;
       background: none;
@@ -310,12 +335,13 @@
     }
     .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
     .tab:hover { color: var(--primary); }
+    .dark .tab.active { color: #60a5fa; }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
     
     .diagnostics {
-      background: #f8f9fa;
-      border: 1px solid #ddd;
+      background: var(--bg);
+      border: 1px solid var(--border);
       border-radius: 6px;
       padding: 15px;
       margin-top: 15px;
@@ -324,7 +350,8 @@
       overflow-y: auto;
     }
     .diagnostics h4 { margin-bottom: 10px; color: var(--primary); }
-    .diagnostic-item { padding: 4px 0; border-bottom: 1px solid #eee; }
+    .dark .diagnostics h4 { color: #60a5fa; }
+    .diagnostic-item { padding: 4px 0; border-bottom: 1px solid var(--border); }
     .diagnostic-item:last-child { border-bottom: none; }
     .diagnostic-warning { color: #d68910; }
     .diagnostic-error { color: #c0392b; }
@@ -340,6 +367,16 @@
       margin-bottom: 15px;
       font-size: 0.9em;
     }
+    .dark .cache-info { background: #0f2d26; color: #6ee7b7; }
+    
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    .toolbar-spacer { flex: 1; }
     
     .hidden { display: none !important; }
     
@@ -358,6 +395,7 @@
       .form-grid { grid-template-columns: 1fr; }
       .btn-group { flex-direction: column; }
       .break-row { grid-template-columns: 1fr; }
+      .toolbar { flex-direction: column; align-items: stretch; }
     }
   </style>
 </head>
@@ -438,7 +476,7 @@
             <div class="form-group"><label>Number of Weeks</label><input type="number" id="numWeeks" value="13" min="1" max="20" class="editable"></div>
           </div>
           <div style="margin-top: 20px;">
-            <label style="display: block; margin-bottom: 10px; color: #555;">Term Breaks</label>
+            <label style="display: block; margin-bottom: 10px; color: var(--text);">Term Breaks</label>
             <div id="termBreaksContainer">
               <div class="break-row" style="font-weight: 600; background: transparent; border: none; padding: 0;">
                 <div>Break Name</div><div>Start Week</div><div>Start Lesson</div><div>End Week</div><div>End Lesson</div><div></div>
@@ -452,10 +490,20 @@
 
         <div class="card no-print">
           <div class="card-title">4. Generate & Export</div>
-          <div class="btn-group">
-            <button class="btn-success" onclick="generateScheme()">Generate Scheme of Work</button>
-            <button class="btn-primary" onclick="window.print()">Print</button>
-            <button class="btn-primary" onclick="downloadPDF()">Download PDF</button>
+          <div class="toolbar">
+            <div class="btn-group">
+              <button class="btn-success" onclick="generateScheme()">Generate Scheme of Work</button>
+              <button class="btn-primary" onclick="window.print()">Print</button>
+              <button class="btn-primary" onclick="downloadPDF()">Download PDF</button>
+              <button class="btn-primary" onclick="downloadWord()">Download Word</button>
+            </div>
+            <div class="toolbar-spacer"></div>
+            <div class="btn-group">
+              <button class="btn-secondary" onclick="saveScheme()">Save Scheme</button>
+              <button class="btn-secondary" onclick="loadSavedSchemes()">Load Scheme</button>
+              <button class="btn-secondary" onclick="undoAction()">Undo</button>
+              <button class="btn-secondary" onclick="redoAction()">Redo</button>
+            </div>
           </div>
         </div>
 
@@ -501,6 +549,9 @@
     let subjectFiles = [];
     let diagnostics = [];
     let currentTab = 'scheme';
+    let undoStack = [];
+    let redoStack = [];
+    let historyPaused = false;
 
     function init() {
       const gradeSelect = document.getElementById('gradeSelect');
@@ -513,6 +564,13 @@
       gradeSelect.addEventListener('change', onGradeChange);
       document.getElementById('schemeYear').value = new Date().getFullYear();
       updateCacheInfo();
+      document.addEventListener('keydown', handleKeyboard);
+    }
+
+    function handleKeyboard(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoAction(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redoAction(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveScheme(); }
     }
 
     function switchTab(tab) {
@@ -749,56 +807,6 @@
       return items;
     }
 
-    function finalizeSubStrand(sub) {
-      return {
-        number: sub.number,
-        title: sub.title,
-        lessons: sub.lessons,
-        outcomes: splitItems(sub.rawOutcomes.join('\n')),
-        experiences: splitItems(sub.rawExperiences.join('\n')),
-        questions: splitQuestions(sub.rawQuestions.join('\n'))
-      };
-    }
-
-    function splitItems(text) {
-      if (!text) return [];
-      text = text.replace(/^By the end of (?:the )?(?:sub-?strand|lesson|strand)[^:]*:\s*/i, '');
-      text = text.replace(/^(?:The learner|Learners) are guided to:\s*/i, '');
-      text = text.replace(/^By the end of Junior School, the learner should be able to:\s*/i, '');
-      const items = [];
-      const lines = text.split('\n').map(s => s.trim()).filter(s => s.length > 3);
-      lines.forEach(line => {
-        const bulletParts = line.split(/(?=[\s]*[●•]\s)/).map(s => s.trim()).filter(s => s.length > 3);
-        if (bulletParts.length > 1) {
-          items.push(...bulletParts);
-        } else {
-          const letterParts = line.split(/(?=[\s]*[a-z]\)\s)/i).map(s => s.trim()).filter(s => s.length > 3);
-          if (letterParts.length > 1) {
-            items.push(...letterParts);
-          } else {
-            items.push(line);
-          }
-        }
-      });
-      return [...new Set(items)].slice(0, 20);
-    }
-
-    function splitQuestions(text) {
-      if (!text) return [];
-      text = text.replace(/^Suggested Key Inquiry Questions?\s*/i, '');
-      const items = [];
-      const regex = /(\d+\.\s*[^\d\n]+)/g;
-      let match;
-      while ((match = regex.exec(text)) !== null) {
-        items.push(match[1].trim());
-      }
-      if (items.length === 0) {
-        const lines = text.split('\n').map(s => s.trim()).filter(s => s.length > 3);
-        return lines.slice(0, 10);
-      }
-      return items;
-    }
-
     function extractFromTables(tables, keyword) {
       for (const table of tables) {
         const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
@@ -878,8 +886,49 @@
       }
     }
 
+    function captureTableState() {
+      const rows = Array.from(document.querySelectorAll('#schemeBody tr'));
+      return rows.map(tr => tr.innerHTML);
+    }
+
+    function pushUndo() {
+      if (historyPaused) return;
+      undoStack.push(captureTableState());
+      if (undoStack.length > 50) undoStack.shift();
+      redoStack = [];
+    }
+
+    function undoAction() {
+      const current = captureTableState();
+      if (undoStack.length === 0) { showInfo('Nothing to undo'); return; }
+      redoStack.push(current);
+      const prev = undoStack.pop();
+      restoreTableState(prev);
+      showInfo('Undo');
+    }
+
+    function redoAction() {
+      const current = captureTableState();
+      if (redoStack.length === 0) { showInfo('Nothing to redo'); return; }
+      undoStack.push(current);
+      const next = redoStack.pop();
+      restoreTableState(next);
+      showInfo('Redo');
+    }
+
+    function restoreTableState(rowsHtml) {
+      const tbody = document.getElementById('schemeBody');
+      tbody.innerHTML = '';
+      rowsHtml.forEach(html => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+      });
+    }
+
     function generateScheme() {
       if (!parsedData) { showError('Please load a curriculum design first'); return; }
+      pushUndo();
       const numWeeks = parseInt(document.getElementById('numWeeks').value) || 13;
       const breaks = getBreaks();
       const tbody = document.getElementById('schemeBody');
@@ -937,6 +986,7 @@
       generateHeader();
       document.getElementById('schemeOutput').style.display = 'block';
       document.getElementById('schemeOutput').scrollIntoView({ behavior: 'smooth' });
+      showSuccess('Scheme generated');
     }
 
     function generateLessonPlans() {
@@ -1009,6 +1059,84 @@
         jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
       };
       html2pdf().set(opt).from(element).save();
+    }
+
+    function downloadWord() {
+      const table = document.getElementById('schemeTable');
+      const header = document.getElementById('schemeHeader').innerHTML;
+      const subject = document.getElementById('schemeSubject').value || 'Scheme';
+      const term = document.getElementById('schemeTerm').value || '';
+      const year = document.getElementById('schemeYear').value || '';
+      const html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>${subject}</title></head>
+        <body>
+          ${header}
+          ${table.outerHTML}
+        </body>
+        </html>
+      `;
+      const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Scheme_of_Work_${subject}_${term}_${year}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function saveScheme() {
+      const data = {
+        schoolName: document.getElementById('schoolName').value,
+        schoolMotto: document.getElementById('schoolMotto').value,
+        schoolAddress: document.getElementById('schoolAddress').value,
+        teacherName: document.getElementById('teacherName').value,
+        tscNo: document.getElementById('tscNo').value,
+        schemeSubject: document.getElementById('schemeSubject').value,
+        schemeGrade: document.getElementById('schemeGrade').value,
+        schemeTerm: document.getElementById('schemeTerm').value,
+        schemeYear: document.getElementById('schemeYear').value,
+        numWeeks: document.getElementById('numWeeks').value,
+        breaks: Array.from(document.querySelectorAll('#termBreaksList .break-row')).map(row => ({
+          name: row.querySelector('.break-name').value,
+          sw: row.querySelector('.break-sw').value,
+          sl: row.querySelector('.break-sl').value,
+          ew: row.querySelector('.break-ew').value,
+          el: row.querySelector('.break-el').value
+        })),
+        tableRows: captureTableState(),
+        savedAt: Date.now()
+      };
+      const schemes = JSON.parse(localStorage.getItem('kicd_saved_schemes') || '[]');
+      schemes.push(data);
+      localStorage.setItem('kicd_saved_schemes', JSON.stringify(schemes));
+      showSuccess('Scheme saved');
+    }
+
+    function loadSavedSchemes() {
+      const schemes = JSON.parse(localStorage.getItem('kicd_saved_schemes') || '[]');
+      if (schemes.length === 0) { showError('No saved schemes found'); return; }
+      const latest = schemes[schemes.length - 1];
+      document.getElementById('schoolName').value = latest.schoolName || '';
+      document.getElementById('schoolMotto').value = latest.schoolMotto || '';
+      document.getElementById('schoolAddress').value = latest.schoolAddress || '';
+      document.getElementById('teacherName').value = latest.teacherName || '';
+      document.getElementById('tscNo').value = latest.tscNo || '';
+      document.getElementById('schemeSubject').value = latest.schemeSubject || '';
+      document.getElementById('schemeGrade').value = latest.schemeGrade || '';
+      document.getElementById('schemeTerm').value = latest.schemeTerm || 'Term 1';
+      document.getElementById('schemeYear').value = latest.schemeYear || new Date().getFullYear();
+      document.getElementById('numWeeks').value = latest.numWeeks || 13;
+      if (latest.tableRows) restoreTableState(latest.tableRows);
+      if (latest.breaks && latest.breaks.length) {
+        document.getElementById('termBreaksList').innerHTML = '';
+        latest.breaks.forEach(b => addBreak(b.name, b.sw, b.sl, b.ew, b.el));
+      }
+      generateHeader();
+      document.getElementById('schemeOutput').style.display = 'block';
+      showSuccess('Scheme loaded');
     }
 
     // Cache functions
