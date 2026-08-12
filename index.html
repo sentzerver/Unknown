@@ -8,186 +8,233 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root {
-      --primary: #1a5276;
-      --primary-light: #2980b9;
-      --primary-dark: #154360;
-      --accent: #27ae60;
-      --accent-hover: #219a52;
-      --warning: #f39c12;
-      --danger: #e74c3c;
-      --bg: #f5f7fa;
+      --primary: #0f4c81;
+      --primary-light: #1e6fb5;
+      --primary-dark: #0b3a5e;
+      --accent: #2e7d32;
+      --accent-hover: #1b5e20;
+      --warning: #ef6c00;
+      --danger: #c62828;
+      --bg: #f4f6f9;
       --card: #ffffff;
-      --text: #2c3e50;
-      --text-light: #7f8c8d;
-      --border: #ddd;
-      --break-bg: #fff3cd;
-      --break-text: #856404;
-      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+      --text: #1f2937;
+      --text-light: #6b7280;
+      --border: #e5e7eb;
+      --break-bg: #fff8e1;
+      --break-text: #8a6d00;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
     }
     .dark {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --text: #e2e8f0;
-      --text-light: #94a3b8;
-      --border: #334155;
-      --break-bg: #422006;
-      --break-text: #fcd34d;
-      --shadow: 0 2px 8px rgba(0,0,0,0.35);
+      --bg: #0b1220;
+      --card: #111827;
+      --text: #e5e7eb;
+      --text-light: #9ca3af;
+      --border: #1f2937;
+      --break-bg: #3e2f04;
+      --break-text: #fde68a;
+      --shadow: 0 1px 3px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.25);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.45);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.6;
+      line-height: 1.55;
       min-height: 100vh;
     }
-    .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+    .container { max-width: 1600px; margin: 0 auto; padding: 24px; }
     
     .app-header {
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
       color: white;
-      padding: 30px 20px;
+      padding: 28px 24px;
       text-align: center;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-lg);
       position: sticky;
       top: 0;
       z-index: 100;
     }
-    .app-header h1 { font-size: 2.2em; margin-bottom: 8px; font-weight: 700; }
-    .app-header p { opacity: 0.9; font-size: 1.05em; }
+    .app-header h1 { font-size: 2.1em; margin-bottom: 6px; font-weight: 800; letter-spacing: -0.3px; }
+    .app-header p { opacity: 0.92; font-size: 1.05em; font-weight: 500; }
+    
+    .topbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 12px 24px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 88px;
+      z-index: 90;
+      backdrop-filter: blur(10px);
+      background: color-mix(in srgb, var(--card) 85%, transparent);
+    }
+    .topbar .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text-light);
+      font-size: 0.82em;
+      cursor: pointer;
+    }
     
     .card {
       background: var(--card);
-      border-radius: 12px;
-      padding: 25px;
-      margin-bottom: 20px;
+      border-radius: 14px;
+      padding: 26px;
+      margin-bottom: 18px;
       box-shadow: var(--shadow);
       border: 1px solid var(--border);
     }
     .card-title {
-      font-size: 1.3em;
+      font-size: 1.25em;
       color: var(--primary);
-      margin-bottom: 18px;
+      margin-bottom: 16px;
       padding-bottom: 10px;
-      border-bottom: 2px solid var(--border);
-      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    .dark .card-title { color: #60a5fa; border-bottom-color: #334155; }
+    .dark .card-title { color: #7dd3fc; border-bottom-color: #1f2937; }
+    
+    .section-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85em;
+      flex-shrink: 0;
+    }
+    .dark .section-number { background: #1e6fb5; }
     
     .form-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
     }
     .form-group { display: flex; flex-direction: column; }
     label {
       font-weight: 600;
       margin-bottom: 6px;
       color: var(--text);
-      font-size: 0.88em;
+      font-size: 0.82em;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
     }
     input, select, textarea {
       padding: 10px 12px;
-      border: 2px solid var(--border);
-      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
       font-size: 0.95em;
-      transition: border-color 0.2s;
+      transition: all 0.2s ease;
       background: var(--card);
       color: var(--text);
     }
     input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: var(--primary-light);
-      box-shadow: 0 0 0 3px rgba(41,128,185,0.15);
+      box-shadow: 0 0 0 3px rgba(30,111,181,0.12);
     }
-    textarea { resize: vertical; min-height: 60px; }
+    textarea { resize: vertical; min-height: 56px; }
     
     button {
-      padding: 12px 24px;
+      padding: 10px 20px;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 0.95em;
+      font-size: 0.92em;
       font-weight: 600;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      letter-spacing: 0.1px;
     }
-    .btn-primary { background: var(--primary-light); color: white; }
-    .btn-primary:hover { background: var(--primary); transform: translateY(-1px); }
-    .btn-success { background: var(--accent); color: white; }
+    .btn-primary { background: var(--primary-light); color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+    .btn-primary:hover { background: var(--primary); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
+    .btn-success { background: var(--accent); color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
     .btn-success:hover { background: var(--accent-hover); transform: translateY(-1px); }
-    .btn-secondary { background: #64748b; color: white; }
-    .btn-secondary:hover { background: #475569; }
-    .btn-danger { background: var(--danger); color: white; padding: 6px 12px; font-size: 0.85em; }
-    .btn-danger:hover { background: #c0392b; }
+    .btn-secondary { background: #6b7280; color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+    .btn-secondary:hover { background: #4b5563; transform: translateY(-1px); }
+    .btn-danger { background: var(--danger); color: white; padding: 6px 12px; font-size: 0.82em; border-radius: 6px; }
+    .btn-danger:hover { background: #9b1c1c; }
     .btn-small { padding: 6px 14px; font-size: 0.85em; }
-    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
     
     .progress-container { margin: 20px 0; display: none; }
     .progress-bar {
       width: 100%;
-      height: 24px;
+      height: 22px;
       background: var(--border);
-      border-radius: 12px;
+      border-radius: 999px;
       overflow: hidden;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
     }
     .progress-fill {
       height: 100%;
       background: linear-gradient(90deg, var(--primary-light), var(--accent));
       width: 0%;
       transition: width 0.4s ease;
-      border-radius: 12px;
+      border-radius: 999px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
-      font-weight: 600;
-      font-size: 0.85em;
+      font-weight: 700;
+      font-size: 0.8em;
     }
-    .progress-text { text-align: center; margin-top: 8px; font-weight: 600; color: var(--text); }
+    .progress-text { text-align: center; margin-top: 8px; font-weight: 600; color: var(--text); font-size: 0.95em; }
     
     .loading-overlay {
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(255,255,255,0.95);
+      background: rgba(255,255,255,0.96);
       z-index: 1000;
       justify-content: center;
       align-items: center;
       flex-direction: column;
+      backdrop-filter: blur(6px);
     }
-    .dark .loading-overlay { background: rgba(15,23,42,0.95); }
+    .dark .loading-overlay { background: rgba(11,18,32,0.96); }
     .spinner {
-      border: 5px solid var(--border);
-      border-top: 5px solid var(--primary-light);
+      border: 4px solid var(--border);
+      border-top-color: var(--primary-light);
       border-radius: 50%;
-      width: 60px;
-      height: 60px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 20px;
+      width: 52px;
+      height: 52px;
+      animation: spin 0.85s linear infinite;
+      margin-bottom: 18px;
     }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .loading-text { font-size: 1.1em; color: var(--text); font-weight: 600; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 1.05em; color: var(--text); font-weight: 600; }
     
     .message {
-      padding: 14px 18px;
-      border-radius: 6px;
-      margin: 12px 0;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin: 10px 0;
       display: none;
-      font-weight: 500;
-      animation: slideDown 0.3s ease;
+      font-weight: 600;
+      animation: slideDown 0.25s ease;
+      font-size: 0.92em;
     }
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    .error { background: #fadbd8; color: #c0392b; border: 1px solid #f5b7b1; }
-    .success { background: #d5f4e6; color: #27ae60; border: 1px solid #abebc6; }
-    .info { background: #d6eaf8; color: #2980b9; border: 1px solid #aed6f1; }
-    .warning { background: #fef9e7; color: #d68910; border: 1px solid #f9e79f; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .error { background: #fde8e8; color: #b91c1c; border: 1px solid #f5b7b7; }
+    .success { background: #d1fae5; color: #065f46; border: 1px solid #abebc6; }
+    .info { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+    .warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
     .dark .error { background: #3b1518; color: #fca5a5; border-color: #7f1d1d; }
     .dark .success { background: #143028; color: #6ee7b7; border-color: #064e3b; }
     .dark .info { background: #0c2d48; color: #93c5fd; border-color: #1e3a8a; }
@@ -195,59 +242,63 @@
     
     .school-header {
       border: 2px solid var(--primary);
-      background: linear-gradient(to bottom, #f8f9fa, #fff);
+      background: linear-gradient(to bottom, #f8fafc, #fff);
       position: relative;
+      overflow: hidden;
     }
-    .dark .school-header { background: linear-gradient(to bottom, #1e293b, #0f172a); border-color: #334155; }
+    .dark .school-header { background: linear-gradient(to bottom, #111827, #0b1220); border-color: #1f2937; }
     .school-header::before {
       content: '';
       position: absolute;
       top: 0; left: 0; right: 0;
-      height: 4px;
+      height: 5px;
       background: linear-gradient(90deg, var(--primary-light), var(--accent));
     }
     .school-header-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 15px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+      padding-top: 10px;
     }
     
-    .term-breaks { border: 1px solid var(--border); padding: 20px; border-radius: 8px; background: var(--bg); }
+    .term-breaks { border: 1px solid var(--border); padding: 18px; border-radius: 10px; background: var(--bg); }
     .break-row {
       display: grid;
       grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
       gap: 10px;
       align-items: center;
       margin-bottom: 10px;
-      padding: 8px;
+      padding: 10px;
       background: var(--card);
-      border-radius: 4px;
+      border-radius: 8px;
       border: 1px solid var(--border);
     }
-    .break-row input { padding: 8px; font-size: 0.9em; }
+    .break-row input { padding: 8px; font-size: 0.9em; border-radius: 6px; }
     
     .timeline {
       display: flex;
-      gap: 4px;
-      margin-top: 15px;
+      gap: 5px;
+      margin-top: 14px;
       flex-wrap: wrap;
     }
     .timeline-week {
-      width: 32px;
-      height: 32px;
-      border-radius: 4px;
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 0.75em;
-      font-weight: 600;
+      font-weight: 700;
       border: 2px solid transparent;
+      transition: transform 0.15s ease;
     }
-    .timeline-week.normal { background: #d5f4e6; color: #27ae60; border-color: #abebc6; }
-    .timeline-week.break { background: #fef9e7; color: #d68910; border-color: #f9e79f; }
+    .timeline-week:hover { transform: scale(1.08); }
+    .timeline-week.normal { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+    .timeline-week.break { background: #fef3c7; color: #92400e; border-color: #fde68a; }
     .timeline-week.empty { background: var(--border); color: var(--text-light); border-color: var(--border); }
     
-    .scheme-container { overflow-x: auto; margin-top: 20px; border-radius: 8px; border: 1px solid var(--border); }
+    .scheme-container { overflow-x: auto; margin-top: 18px; border-radius: 10px; border: 1px solid var(--border); box-shadow: var(--shadow); }
     #schemeTable {
       width: 100%;
       border-collapse: collapse;
@@ -259,32 +310,33 @@
       color: white;
       padding: 12px 8px;
       text-align: center;
-      font-weight: 600;
-      border: 1px solid var(--primary-dark);
+      font-weight: 700;
+      border: 1px solid rgba(255,255,255,0.08);
       text-transform: uppercase;
-      font-size: 0.75em;
-      letter-spacing: 0.3px;
+      font-size: 0.72em;
+      letter-spacing: 0.4px;
     }
     #schemeTable td {
       border: 1px solid var(--border);
-      padding: 8px;
+      padding: 10px;
       vertical-align: top;
       min-width: 100px;
-      max-width: 200px;
+      max-width: 220px;
       background: var(--card);
       color: var(--text);
+      line-height: 1.45;
     }
     #schemeTable tr:nth-child(even) td { background: var(--bg); }
     #schemeTable tr.break-row-table td {
       font-style: italic;
       text-align: center;
       color: var(--break-text);
-      font-weight: 600;
-      padding: 12px;
+      font-weight: 700;
+      padding: 14px;
       background: var(--break-bg) !important;
     }
     .editable:focus {
-      background: #fffde7;
+      background: #fffbeb;
       outline: 2px solid var(--primary-light);
       outline-offset: -2px;
     }
@@ -292,89 +344,96 @@
     
     .lesson-plan {
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 20px;
-      margin-bottom: 15px;
+      margin-bottom: 14px;
       background: var(--card);
+      box-shadow: var(--shadow);
     }
     .lesson-plan-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 15px;
+      margin-bottom: 14px;
       padding-bottom: 10px;
       border-bottom: 2px solid var(--border);
     }
     .lesson-plan-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 12px;
     }
     .lesson-plan-field label {
-      font-size: 0.8em;
+      font-size: 0.78em;
       color: var(--text-light);
       text-transform: uppercase;
       margin-bottom: 4px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
     }
     .lesson-plan-field input, .lesson-plan-field textarea {
       width: 100%;
       padding: 8px;
       font-size: 0.9em;
+      border-radius: 6px;
     }
     
-    .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
+    .tabs { display: flex; gap: 0; margin-bottom: 18px; border-bottom: 2px solid var(--border); }
     .tab {
-      padding: 12px 24px;
+      padding: 12px 22px;
       background: none;
       border: none;
       border-bottom: 3px solid transparent;
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-light);
       border-radius: 0;
+      transition: all 0.2s ease;
     }
     .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
     .tab:hover { color: var(--primary); }
-    .dark .tab.active { color: #60a5fa; }
-    .tab-content { display: none; }
+    .dark .tab.active { color: #7dd3fc; }
+    .tab-content { display: none; animation: fadeIn 0.25s ease; }
     .tab-content.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     
     .diagnostics {
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 15px;
-      margin-top: 15px;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 14px;
       font-size: 0.85em;
-      max-height: 300px;
+      max-height: 280px;
       overflow-y: auto;
     }
-    .diagnostics h4 { margin-bottom: 10px; color: var(--primary); }
-    .dark .diagnostics h4 { color: #60a5fa; }
+    .diagnostics h4 { margin-bottom: 8px; color: var(--primary); font-size: 0.95em; }
+    .dark .diagnostics h4 { color: #7dd3fc; }
     .diagnostic-item { padding: 4px 0; border-bottom: 1px solid var(--border); }
     .diagnostic-item:last-child { border-bottom: none; }
-    .diagnostic-warning { color: #d68910; }
-    .diagnostic-error { color: #c0392b; }
-    .diagnostic-success { color: #27ae60; }
+    .diagnostic-warning { color: #d97706; }
+    .diagnostic-error { color: #dc2626; }
+    .diagnostic-success { color: #059669; }
     
     .cache-info {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 15px;
-      background: #e8f6f3;
-      border-radius: 6px;
-      margin-bottom: 15px;
-      font-size: 0.9em;
+      padding: 10px 14px;
+      background: #ecfdf5;
+      border-radius: 8px;
+      margin-bottom: 14px;
+      font-size: 0.88em;
+      border: 1px solid #a7f3d0;
     }
-    .dark .cache-info { background: #0f2d26; color: #6ee7b7; }
+    .dark .cache-info { background: #042f2e; color: #6ee7b7; border-color: #064e3b; }
     
     .toolbar {
       display: flex;
       gap: 10px;
       align-items: center;
       flex-wrap: wrap;
-      margin-bottom: 15px;
+      margin-bottom: 14px;
     }
     .toolbar-spacer { flex: 1; }
     
@@ -383,11 +442,11 @@
     @media print {
       body { background: white; }
       .no-print { display: none !important; }
-      .card { box-shadow: none; border: 1px solid #ddd; padding: 15px; }
+      .card { box-shadow: none; border: 1px solid #ddd; padding: 14px; }
       #schemeTable { font-size: 0.7em; }
       #schemeTable th, #schemeTable td { padding: 4px; }
       .container { max-width: 100%; padding: 0; }
-      .app-header { display: none; }
+      .app-header, .topbar { display: none; }
     }
     
     @media (max-width: 768px) {
@@ -396,6 +455,7 @@
       .btn-group { flex-direction: column; }
       .break-row { grid-template-columns: 1fr; }
       .toolbar { flex-direction: column; align-items: stretch; }
+      .topbar { top: 72px; padding: 10px 16px; }
     }
   </style>
 </head>
@@ -404,10 +464,16 @@
     <h1>KICD Scheme of Work Generator</h1>
     <p>Generate professional Schemes of Work from KICD Curriculum Designs</p>
   </div>
+
+  <div class="topbar no-print">
+    <button class="chip" onclick="toggleTheme()" title="Toggle dark mode">🌓 Theme</button>
+    <button class="chip" onclick="clearCache()" title="Clear cached curricula">🗑 Cache</button>
+    <span class="chip" style="cursor:default" id="shortcutsHint">Ctrl+S save · Ctrl+Z undo · Ctrl+Y redo</span>
+  </div>
   
   <div class="container">
     <div class="card no-print">
-      <div class="card-title">1. Select Curriculum</div>
+      <div class="card-title"><span class="section-number">1</span> Select Curriculum</div>
       <div class="form-grid">
         <div class="form-group">
           <label>Grade</label>
@@ -420,11 +486,10 @@
       </div>
       <div class="btn-group">
         <button class="btn-primary" onclick="loadCurriculum()">Load Curriculum Design</button>
-        <button class="btn-secondary" onclick="clearCache()">Clear Cache</button>
       </div>
       <div id="cacheInfo" class="cache-info hidden">
         <span id="cacheStatus"></span>
-        <span id="cacheTime" style="color: var(--text-light); font-size: 0.85em;"></span>
+        <span id="cacheTime" style="color: var(--text-light); font-size: 0.82em;"></span>
       </div>
       <div class="progress-container" id="progressContainer">
         <div class="progress-bar">
@@ -454,31 +519,31 @@
 
       <div id="schemeTab" class="tab-content active">
         <div class="card school-header">
-          <div class="card-title">2. School Information</div>
+          <div class="card-title"><span class="section-number">2</span> School Information</div>
           <div class="school-header-grid">
-            <div class="form-group"><label>School Name</label><input type="text" id="schoolName" class="editable"></div>
-            <div class="form-group"><label>School Motto</label><input type="text" id="schoolMotto" class="editable"></div>
-            <div class="form-group"><label>School Address</label><input type="text" id="schoolAddress" class="editable"></div>
-            <div class="form-group"><label>Teacher Name</label><input type="text" id="teacherName" class="editable"></div>
-            <div class="form-group"><label>TSC No.</label><input type="text" id="tscNo" class="editable"></div>
+            <div class="form-group"><label>School Name</label><input type="text" id="schoolName" class="editable" placeholder="Enter school name"></div>
+            <div class="form-group"><label>School Motto</label><input type="text" id="schoolMotto" class="editable" placeholder="Enter motto"></div>
+            <div class="form-group"><label>School Address</label><input type="text" id="schoolAddress" class="editable" placeholder="Enter address"></div>
+            <div class="form-group"><label>Teacher Name</label><input type="text" id="teacherName" class="editable" placeholder="Enter teacher name"></div>
+            <div class="form-group"><label>TSC No.</label><input type="text" id="tscNo" class="editable" placeholder="Enter TSC number"></div>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-title">3. Scheme Details</div>
+          <div class="card-title"><span class="section-number">3</span> Scheme Details</div>
           <div class="form-grid">
-            <div class="form-group"><label>Subject</label><input type="text" id="schemeSubject" class="editable"></div>
-            <div class="form-group"><label>Grade</label><input type="text" id="schemeGrade" class="editable"></div>
+            <div class="form-group"><label>Subject</label><input type="text" id="schemeSubject" class="editable" placeholder="Subject"></div>
+            <div class="form-group"><label>Grade</label><input type="text" id="schemeGrade" class="editable" placeholder="Grade"></div>
             <div class="form-group"><label>Term</label>
               <select id="schemeTerm" class="editable"><option>Term 1</option><option>Term 2</option><option>Term 3</option></select>
             </div>
-            <div class="form-group"><label>Year</label><input type="number" id="schemeYear" class="editable"></div>
+            <div class="form-group"><label>Year</label><input type="number" id="schemeYear" class="editable" placeholder="Year"></div>
             <div class="form-group"><label>Number of Weeks</label><input type="number" id="numWeeks" value="13" min="1" max="20" class="editable"></div>
           </div>
           <div style="margin-top: 20px;">
-            <label style="display: block; margin-bottom: 10px; color: var(--text);">Term Breaks</label>
+            <label style="display: block; margin-bottom: 10px; color: var(--text); font-weight: 700;">Term Breaks</label>
             <div id="termBreaksContainer">
-              <div class="break-row" style="font-weight: 600; background: transparent; border: none; padding: 0;">
+              <div class="break-row" style="font-weight: 700; background: transparent; border: none; padding: 0;">
                 <div>Break Name</div><div>Start Week</div><div>Start Lesson</div><div>End Week</div><div>End Lesson</div><div></div>
               </div>
               <div id="termBreaksList"></div>
@@ -489,7 +554,7 @@
         </div>
 
         <div class="card no-print">
-          <div class="card-title">4. Generate & Export</div>
+          <div class="card-title"><span class="section-number">4</span> Generate & Export</div>
           <div class="toolbar">
             <div class="btn-group">
               <button class="btn-success" onclick="generateScheme()">Generate Scheme of Work</button>
@@ -499,10 +564,10 @@
             </div>
             <div class="toolbar-spacer"></div>
             <div class="btn-group">
-              <button class="btn-secondary" onclick="saveScheme()">Save Scheme</button>
+              <button class="btn-secondary" onclick="saveScheme()" title="Ctrl+S">Save Scheme</button>
               <button class="btn-secondary" onclick="loadSavedSchemes()">Load Scheme</button>
-              <button class="btn-secondary" onclick="undoAction()">Undo</button>
-              <button class="btn-secondary" onclick="redoAction()">Redo</button>
+              <button class="btn-secondary" onclick="undoAction()" title="Ctrl+Z">Undo</button>
+              <button class="btn-secondary" onclick="redoAction()" title="Ctrl+Y">Redo</button>
             </div>
           </div>
         </div>
@@ -533,7 +598,7 @@
 
       <div id="lessonTab" class="tab-content">
         <div class="card">
-          <div class="card-title">Lesson Plans</div>
+          <div class="card-title"><span class="section-number">5</span> Lesson Plans</div>
           <div id="lessonPlansContainer"></div>
         </div>
       </div>
@@ -565,6 +630,12 @@
       document.getElementById('schemeYear').value = new Date().getFullYear();
       updateCacheInfo();
       document.addEventListener('keydown', handleKeyboard);
+      if (localStorage.getItem('kicd_theme') === 'dark') document.body.classList.add('dark');
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('kicd_theme', document.body.classList.contains('dark') ? 'dark' : 'light');
     }
 
     function handleKeyboard(e) {
@@ -1038,13 +1109,13 @@
       const term = document.getElementById('schemeTerm').value || '';
       const year = document.getElementById('schemeYear').value || '';
       document.getElementById('schemeHeader').innerHTML = `
-        <div style="text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 15px;">
-          <h2 style="margin: 0; font-size: 1.6em; color: var(--primary);">${schoolName}</h2>
-          ${motto ? `<p style="margin: 5px 0; font-style: italic; color: #555;">"${motto}"</p>` : ''}
-          ${address ? `<p style="margin: 3px 0; color: #555; font-size: 0.9em;">${address}</p>` : ''}
-          <h3 style="margin: 10px 0 5px; color: #333;">SCHEME OF WORK</h3>
-          <p style="margin: 3px 0; font-weight: 600;">${subject} - ${grade} | ${term} ${year}</p>
-          ${teacher || tsc ? `<p style="margin: 3px 0; color: #555; font-size: 0.9em;">Teacher: ${teacher} ${tsc ? '| TSC No: ' + tsc : ''}</p>` : ''}
+        <div style="text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 14px; margin-bottom: 14px;">
+          <h2 style="margin: 0; font-size: 1.55em; color: var(--primary); font-weight: 800;">${schoolName}</h2>
+          ${motto ? `<p style="margin: 5px 0; font-style: italic; color: var(--text-light);">"${motto}"</p>` : ''}
+          ${address ? `<p style="margin: 3px 0; color: var(--text-light); font-size: 0.9em;">${address}</p>` : ''}
+          <h3 style="margin: 10px 0 5px; color: var(--text); letter-spacing: 0.4px;">SCHEME OF WORK</h3>
+          <p style="margin: 3px 0; font-weight: 700;">${subject} - ${grade} | ${term} ${year}</p>
+          ${teacher || tsc ? `<p style="margin: 3px 0; color: var(--text-light); font-size: 0.9em;">Teacher: ${teacher} ${tsc ? '| TSC No: ' + tsc : ''}</p>` : ''}
         </div>
       `;
     }
@@ -1075,6 +1146,152 @@
           ${table.outerHTML}
         </body>
         </html>
+      `;
+      const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Scheme_of_Work_${subject}_${term}_${year}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function saveScheme() {
+      const data = {
+        schoolName: document.getElementById('schoolName').value,
+        schoolMotto: document.getElementById('schoolMotto').value,
+        schoolAddress: document.getElementById('schoolAddress').value,
+        teacherName: document.getElementById('teacherName').value,
+        tscNo: document.getElementById('tscNo').value,
+        schemeSubject: document.getElementById('schemeSubject').value,
+        schemeGrade: document.getElementById('schemeGrade').value,
+        schemeTerm: document.getElementById('schemeTerm').value,
+        schemeYear: document.getElementById('schemeYear').value,
+        numWeeks: document.getElementById('numWeeks').value,
+        breaks: Array.from(document.querySelectorAll('#termBreaksList .break-row')).map(row => ({
+          name: row.querySelector('.break-name').value,
+          sw: row.querySelector('.break-sw').value,
+          sl: row.querySelector('.break-sl').value,
+          ew: row.querySelector('.break-ew').value,
+          el: row.querySelector('.break-el').value
+        })),
+        tableRows: captureTableState(),
+        savedAt: Date.now()
+      };
+      const schemes = JSON.parse(localStorage.getItem('kicd_saved_schemes') || '[]');
+      schemes.push(data);
+      localStorage.setItem('kicd_saved_schemes', JSON.stringify(schemes));
+      showSuccess('Scheme saved');
+    }
+
+    function loadSavedSchemes() {
+      const schemes = JSON.parse(localStorage.getItem('kicd_saved_schemes') || '[]');
+      if (schemes.length === 0) { showError('No saved schemes found'); return; }
+      const latest = schemes[schemes.length - 1];
+      document.getElementById('schoolName').value = latest.schoolName || '';
+      document.getElementById('schoolMotto').value = latest.schoolMotto || '';
+      document.getElementById('schoolAddress').value = latest.schoolAddress || '';
+      document.getElementById('teacherName').value = latest.teacherName || '';
+      document.getElementById('tscNo').value = latest.tscNo || '';
+      document.getElementById('schemeSubject').value = latest.schemeSubject || '';
+      document.getElementById('schemeGrade').value = latest.schemeGrade || '';
+      document.getElementById('schemeTerm').value = latest.schemeTerm || 'Term 1';
+      document.getElementById('schemeYear').value = latest.schemeYear || new Date().getFullYear();
+      document.getElementById('numWeeks').value = latest.numWeeks || 13;
+      if (latest.tableRows) restoreTableState(latest.tableRows);
+      if (latest.breaks && latest.breaks.length) {
+        document.getElementById('termBreaksList').innerHTML = '';
+        latest.breaks.forEach(b => addBreak(b.name, b.sw, b.sl, b.ew, b.el));
+      }
+      generateHeader();
+      document.getElementById('schemeOutput').style.display = 'block';
+      showSuccess('Scheme loaded');
+    }
+
+    // Cache functions
+    function getCachedCurriculum(filename) {
+      try {
+        const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+        const item = cache[filename];
+        if (item && Date.now() - item.timestamp < CACHE_DURATION) return item.data;
+      } catch (e) { console.error('Cache read error', e); }
+      return null;
+    }
+
+    function setCachedCurriculum(filename, data) {
+      try {
+        const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+        cache[filename] = { data, timestamp: Date.now() };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+      } catch (e) { console.error('Cache write error', e); }
+    }
+
+    function clearCache() {
+      localStorage.removeItem(CACHE_KEY);
+      showSuccess('Cache cleared');
+      updateCacheInfo();
+    }
+
+    function updateCacheInfo() {
+      try {
+        const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+        const keys = Object.keys(cache);
+        const info = document.getElementById('cacheInfo');
+        if (keys.length > 0) {
+          info.classList.remove('hidden');
+          document.getElementById('cacheStatus').textContent = `Cached curricula: ${keys.length}`;
+          const times = keys.map(k => new Date(cache[k].timestamp).toLocaleString());
+          document.getElementById('cacheTime').textContent = `Last updated: ${times[times.length - 1]}`;
+        } else {
+          info.classList.add('hidden');
+        }
+      } catch (e) { info.classList.add('hidden'); }
+    }
+
+    function showDiagnostics() {
+      const container = document.getElementById('diagnosticsContent');
+      const box = document.getElementById('parsingDiagnostics');
+      container.innerHTML = diagnostics.map(d => {
+        const cls = d.type === 'error' ? 'diagnostic-error' : d.type === 'warning' ? 'diagnostic-warning' : d.type === 'success' ? 'diagnostic-success' : '';
+        return `<div class="diagnostic-item ${cls}">[${d.type.toUpperCase()}] ${d.msg}</div>`;
+      }).join('');
+      box.classList.remove('hidden');
+    }
+
+    function showError(msg) {
+      const box = document.getElementById('errorBox');
+      box.textContent = msg; box.style.display = 'block';
+      setTimeout(() => box.style.display = 'none', 5000);
+    }
+    function showSuccess(msg) {
+      const box = document.getElementById('successBox');
+      box.textContent = msg; box.style.display = 'block';
+      setTimeout(() => box.style.display = 'none', 4000);
+    }
+    function showInfo(msg) {
+      const box = document.getElementById('infoBox');
+      box.textContent = msg; box.style.display = 'block';
+      setTimeout(() => box.style.display = 'none', 3500);
+    }
+    function showLoading(show) { document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none'; }
+    function showProgress(show, pct, text) {
+      const container = document.getElementById('progressContainer');
+      if (show) { container.style.display = 'block'; if (pct !== undefined) updateProgress(pct, text); }
+      else container.style.display = 'none';
+    }
+    function updateProgress(pct, text) {
+      document.getElementById('progressFill').style.width = pct + '%';
+      if (text) document.getElementById('progressText').textContent = text;
+    }
+    function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+    init();
+  </script>
+</body>
+</html>
+
       `;
       const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
       const url = URL.createObjectURL(blob);
