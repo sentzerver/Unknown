@@ -603,6 +603,17 @@
         </div>
       </div>
     </div>
+
+    <div id="previewModal" class="modal hidden" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center; padding:20px;">
+      <div class="card" style="max-width:900px; width:100%; max-height:90vh; overflow-y:auto; background:var(--card);">
+        <div class="card-title">Parsed Curriculum Preview</div>
+        <div id="previewContent" style="font-size:0.9em;"></div>
+        <div class="btn-group" style="margin-top:18px;">
+          <button class="btn-success" onclick="applyParsedData()">Use This Data</button>
+          <button class="btn-secondary" onclick="closePreview()">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -680,6 +691,66 @@
     }
 
     async function loadCurriculum() {
+      const grade = document.getElementById('gradeSelect').value;
+      const subject = document.getElementById('subjectSelect').value;
+      if (!grade || !subject) { showError('Please select both grade and subject'); return; }
+      const file = subjectFiles.find(f => f.name === subject);
+      if (!file) { showError('Subject file not found'); return; }
+      showLoading(true);
+      showProgress(true, 0, 'Fetching curriculum design...');
+      try {
+        await delay(300);
+        updateProgress(20, 'Checking cache...');
+        const cached = getCachedCurriculum(file.name);
+        if (cached) {
+          updateProgress(100, 'Loaded from cache!');
+          await delay(400);
+          parsedData = cached;
+          showProgress(false);
+          showLoading(false);
+          onCurriculumLoaded(grade, parsedData);
+          showSuccess(`Loaded from cache: ${parsedData.subject}`);
+          updateCacheInfo();
+          return;
+        }
+        updateProgress(40, 'Downloading file...');
+        const res = await fetch(file.download_url);
+        if (!res.ok) throw new Error('Failed to download file');
+        const text = await res.text();
+        updateProgress(70, 'Parsing content...');
+        await delay(300);
+        const startTime = Date.now();
+        parsedData = parseCurriculum(text, subject.replace('.md', ''));
+        const parseTime = Date.now() - startTime;
+        setCachedCurriculum(file.name, parsedData);
+        updateProgress(100, 'Complete!');
+        await delay(400);
+        showProgress(false);
+        showLoading(false);
+        onCurriculumLoaded(grade, parsedData);
+        showSuccess(`Loaded: ${parsedData.subject} - ${parsedData.strands.length} strands in ${parseTime}ms`);
+        updateCacheInfo();
+        showDiagnostics();
+      } catch (err) {
+        showError('Error: ' + err.message);
+        showProgress(false);
+        showLoading(false);
+      }
+    }
+
+    function onCurriculumLoaded(grade, data) {
+      const gradeNum = grade.replace('Grade_', '');
+      document.getElementById('schemeSubject').value = data.subject;
+      document.getElementById('schemeGrade').value = `Grade ${gradeNum}`;
+      document.getElementById('schemeContent').classList.remove('hidden');
+      document.getElementById('termBreaksList').innerHTML = '';
+      addBreak('Midterm', '', '', '', '');
+      addBreak('Exams', '', '', '', '');
+      updateTimeline();
+      document.getElementById('schemeContent').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function loadCurriculum() {
       const grade = document.getElementById('gradeSelect').value;
       const subject = document.getElementById('subjectSelect').value;
       if (!grade || !subject) { showError('Please select both grade and subject'); return; }
@@ -1262,6 +1333,37 @@
       generateHeader();
       document.getElementById('schemeOutput').style.display = 'block';
       showSuccess('Scheme loaded');
+    }
+
+    function showPreview(data) {
+      const container = document.getElementById('previewContent');
+      let html = `<div style="margin-bottom:12px;"><strong>Subject:</strong> ${data.subject} | <strong>Strands:</strong> ${data.strands.length} | <strong>Sub-strands:</strong> ${data.strands.reduce((sum, s) => sum + s.subStrands.length, 0)}</div>`;
+      html += '<div style="display:grid; gap:10px;">';
+      data.strands.forEach(strand => {
+        html += `<div style="border:1px solid var(--border); border-radius:8px; padding:12px; background:var(--bg);">`;
+        html += `<div style="font-weight:700; color:var(--primary); margin-bottom:8px;">${strand.number} ${strand.title}</div>`;
+        strand.subStrands.forEach(sub => {
+          html += `<div style="margin-left:12px; margin-bottom:10px;">`;
+          html += `<div style="font-weight:600;">${sub.number} ${sub.title} ${sub.lessons ? '(' + sub.lessons + ' lessons)' : ''}</div>`;
+          if (sub.outcomes.length) html += `<div style="color:var(--text-light); font-size:0.85em;"><strong>Outcomes:</strong> ${sub.outcomes.slice(0,3).join('; ')}</div>`;
+          if (sub.experiences.length) html += `<div style="color:var(--text-light); font-size:0.85em;"><strong>Experiences:</strong> ${sub.experiences.slice(0,3).join('; ')}</div>`;
+          if (sub.questions.length) html += `<div style="color:var(--text-light); font-size:0.85em;"><strong>Questions:</strong> ${sub.questions.slice(0,3).join('; ')}</div>`;
+          html += `</div>`;
+        });
+        html += `</div>`;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+      document.getElementById('previewModal').style.display = 'flex';
+    }
+
+    function closePreview() {
+      document.getElementById('previewModal').style.display = 'none';
+    }
+
+    function applyParsedData() {
+      closePreview();
+      showSuccess('Parsed data applied');
     }
 
     // Cache functions
