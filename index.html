@@ -743,57 +743,33 @@
       diagnostics = [];
       const subject = cleanSubjectName(filename);
       diagnostics.push({ type: 'info', msg: `Parsing: ${subject}` });
-      const html = marked.parse(text);
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
       const strands = [];
-      let currentStrand = null;
-      let currentSubStrand = null;
-      const tables = doc.querySelectorAll('table');
-      diagnostics.push({ type: 'info', msg: `Found ${tables.length} tables` });
-
-      tables.forEach((table, tableIdx) => {
-        const allRows = table.querySelectorAll('tr');
-        if (allRows.length === 0) return;
-
-        const headerCells = Array.from(allRows[0].querySelectorAll('th, td')).map(c => c.textContent.trim());
-        const hasStrandCol = headerCells.some(h => /^strand$/i.test(h) || /sub[\s-]?strand/i.test(h));
-        if (!hasStrandCol && allRows.length > 1) {
-          const probe = Array.from(allRows[1].querySelectorAll('td')).map(c => c.textContent.trim());
-          if (!probe[0]?.match(/^\d+\.0\s+/i)) return;
-        } else if (!hasStrandCol) {
-          return;
-        }
-
-        diagnostics.push({ type: 'info', msg: `Table ${tableIdx + 1}: ${headerCells.join(' | ')}` });
-
-        const sCol = Math.max(0, headerCells.findIndex(h => /^strand$/i.test(h) && !/sub/i.test(h)));
-        const ssCol = Math.max(0, headerCells.findIndex(h => /sub[\s-]?strand/i.test(h)));
-        const oCol = Math.max(0, headerCells.findIndex(h => /outcome/i.test(h)));
-        const eCol = Math.max(0, headerCells.findIndex(h => /experience/i.test(h)));
-        const qCol = Math.max(0, headerCells.findIndex(h => /inquiry|question/i.test(h)));
-
-        for (let i = 1; i < allRows.length; i++) {
-          const row = allRows[i];
-          const cells = Array.from(row.querySelectorAll('td'));
-          if (cells.length === 0) continue;
-          const cellTexts = cells.map(c => c.textContent.trim());
-          if (cellTexts.every(t => !t || t.length < 2 || /^[:\-]+$/.test(t))) continue;
-
-          const strandText = cellTexts[sCol] || '';
-          const subStrandText = cellTexts[ssCol] || '';
-          const strandMatch = strandText.match(/^(\d+\.0)\s+(.+)/i);
-          if (strandMatch) {
-            if (currentSubStrand && currentStrand) currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
-            if (currentStrand) strands.push(currentStrand);
-            currentStrand = { number: strandMatch[1], title: strandMatch[2].replace(/\s*\(.*?lessons?\)\s*/i, '').trim(), subStrands: [] };
-            currentSubStrand = null;
-          }
-
-          const subMatch = subStrandText.match(/^(\d+\.\d+)\s+(.+?)(?:\s*\((\d+)\s*lessons?\))?/i);
-          if (subMatch && currentStrand) {
-            if (currentSubStrand) currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
-            currentSubStrand = {
+      const strandRegex = /^STRAND\s+([\d.]+)\s*[:\-]\s*(.+)$/im;
+      const subStrandRegex = /^\|?\s*\*?\*?([\d.]+)\s+([^|*]+?)\s*\*?\*?(?:\s*\((\d+)\s*lessons?\))?/i;
+      const outcomeHeaderRegex = /By the end of (?:the )?(?:sub-?strand|lesson|strand)/i;
+      const experienceHeaderRegex = /(?:The learner|Learners) are guided to:/i;
+      const questionHeaderRegex = /Suggested Key Inquiry Questions?/i;
+      let strandMatches = [...text.matchAll(strandRegex)];
+      if (strandMatches.length === 0) {
+        diagnostics.push({ type: 'warning', msg: 'No STRAND headers found, trying fallback parser' });
+        return fallbackParse(text, filename);
+      }
+      strandMatches.forEach((match, idx) => {
+        const strandStart = match.index;
+        const strandEnd = idx < strandMatches.length - 1 ? strandMatches[idx + 1].index : text.length;
+        const strandText = text.slice(strandStart, strandEnd);
+        const strand = {
+          number: match[1],
+          title: match[2].replace(/\s*\(.*?lessons?\)\s*/i, '').trim(),
+          subStrands: []
+        };
+        const subMatches = [...strandText.matchAll(subStrandRegex)];
+        if (subMatches.length > 0) {
+          subMatches.forEach((subMatch, subIdx) => {
+            const subStart = subMatch.index + subMatch[0].length;
+            const subEnd = subIdx < subMatches.length - 1 ? subMatches[subIdx + 1].index : strandText.length;
+            const subText = strandText.slice(subStart, subEnd);
+            const sub = {
               number: subMatch[1],
               title: subMatch[2].replace(/\s*\(.*?\)\s*/g, '').trim(),
               lessons: subMatch[3] || '',
@@ -801,31 +777,109 @@
               rawExperiences: [],
               rawQuestions: []
             };
-            if (oCol < cellTexts.length && cellTexts[oCol]) currentSubStrand.rawOutcomes.push(cellTexts[oCol]);
-            if (eCol < cellTexts.length && cellTexts[eCol]) currentSubStrand.rawExperiences.push(cellTexts[eCol]);
-            if (qCol < cellTexts.length && cellTexts[qCol]) currentSubStrand.rawQuestions.push(cellTexts[qCol]);
-          } else if (currentSubStrand) {
-            if (oCol < cellTexts.length && cellTexts[oCol]) currentSubStrand.rawOutcomes.push(cellTexts[oCol]);
-            if (eCol < cellTexts.length && cellTexts[eCol]) currentSubStrand.rawExperiences.push(cellTexts[eCol]);
-            if (qCol < cellTexts.length && cellTexts[qCol]) currentSubStrand.rawQuestions.push(cellTexts[qCol]);
+            let mode = 'normal';
+            const lines = subText.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+              const line = lines[i].trim();
+              if (outcomeHeaderRegex.test(line)) { mode = 'outcomes'; continue; }
+              if (experienceHeaderRegex.test(line)) { mode = 'experiences'; continue; }
+              if (questionHeaderRegex.test(line)) { mode = 'questions'; continue; }
+              if (mode === 'outcomes' && line) sub.rawOutcomes.push(line);
+              else if (mode === 'experiences' && line) sub.rawExperiences.push(line);
+              else if (mode === 'questions' && line) sub.rawQuestions.push(line);
+            }
+            strand.subStrands.push(finalizeSubStrand(sub));
+          });
+        } else {
+          const sub = {
+            number: '',
+            title: strand.title,
+            lessons: '',
+            rawOutcomes: [],
+            rawExperiences: [],
+            rawQuestions: []
+          };
+          let mode = 'normal';
+          const lines = strandText.split('\n');
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (outcomeHeaderRegex.test(line)) { mode = 'outcomes'; continue; }
+            if (experienceHeaderRegex.test(line)) { mode = 'experiences'; continue; }
+            if (questionHeaderRegex.test(line)) { mode = 'questions'; continue; }
+            if (mode === 'outcomes' && line) sub.rawOutcomes.push(line);
+            else if (mode === 'experiences' && line) sub.rawExperiences.push(line);
+            else if (mode === 'questions' && line) sub.rawQuestions.push(line);
           }
+          strand.subStrands.push(finalizeSubStrand(sub));
         }
+        strands.push(strand);
+      });
+      diagnostics.push({ type: 'success', msg: `Parsed ${strands.length} strands, ${strands.reduce((sum, s) => sum + s.subStrands.length, 0)} sub-strands` });
+      const resources = extractKeywordList(text, 'Resources') || ['Textbooks', 'Charts', 'Maps', 'Digital devices'];
+      const assessment = extractKeywordList(text, 'Assessment') || ['Observation', 'Q&A', 'Written Exercise', 'Practical', 'Group Work'];
+      return { subject, grade: '', strands, resources, assessment, tablesFound: 0 };
+    }
 
-        if (currentSubStrand && currentStrand) {
-          currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
+    function fallbackParse(text, filename) {
+      const strands = [];
+      const lines = text.split('\n');
+      let currentStrand = null;
+      let currentSubStrand = null;
+      let mode = 'normal';
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        if (line.startsWith('STRAND')) {
+          if (currentSubStrand && currentStrand) currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
+          if (currentStrand) strands.push(currentStrand);
+          const m = line.match(/^STRAND\s+([\d.]+)\s*[:\-]\s*(.+)/i);
+          currentStrand = m ? { number: m[1], title: m[2].trim(), subStrands: [] } : { number: '', title: line, subStrands: [] };
           currentSubStrand = null;
+          mode = 'normal';
+          continue;
+        }
+        const subMatch = line.match(/^([\d.]+)\s+(.+?)(?:\s*\((\d+)\s*lessons?\))?/i);
+        if (subMatch && currentStrand && !line.startsWith('|')) {
+          if (currentSubStrand) currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
+          currentSubStrand = {
+            number: subMatch[1],
+            title: subMatch[2].replace(/\s*\(.*?\)\s*/g, '').trim(),
+            lessons: subMatch[3] || '',
+            rawOutcomes: [],
+            rawExperiences: [],
+            rawQuestions: []
+          };
+          mode = 'normal';
+          continue;
+        }
+        if (/By the end of (?:the )?(?:sub-?strand|lesson|strand)/i.test(line)) { mode = 'outcomes'; continue; }
+        if (/(?:The learner|Learners) are guided to:/i.test(line)) { mode = 'experiences'; continue; }
+        if (/Suggested Key Inquiry Questions?/i.test(line)) { mode = 'questions'; continue; }
+        if (mode === 'outcomes' && line) currentSubStrand ? currentSubStrand.rawOutcomes.push(line) : null;
+        else if (mode === 'experiences' && line) currentSubStrand ? currentSubStrand.rawExperiences.push(line) : null;
+        else if (mode === 'questions' && line) currentSubStrand ? currentSubStrand.rawQuestions.push(line) : null;
+      }
+      if (currentSubStrand && currentStrand) currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
+      if (currentStrand) strands.push(currentStrand);
+      diagnostics.push({ type: 'warning', msg: `Fallback parsed ${strands.length} strands` });
+      const resources = extractKeywordList(text, 'Resources') || ['Textbooks', 'Charts', 'Maps', 'Digital devices'];
+      const assessment = extractKeywordList(text, 'Assessment') || ['Observation', 'Q&A', 'Written Exercise', 'Practical', 'Group Work'];
+      return { subject: cleanSubjectName(filename), grade: '', strands, resources, assessment, tablesFound: 0 };
+    }
+
+    function extractKeywordList(text, keyword) {
+      const regex = new RegExp(keyword + '[^]*?(?=\\*\\*|\\n\\n|APPENDIX|$)', 'i');
+      const match = text.match(regex);
+      if (!match) return null;
+      const items = [];
+      const lines = match[0].split('\n');
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        if ((trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('●') || trimmed.match(/^\d+\.\s/)) && trimmed.length > 2) {
+          items.push(trimmed.replace(/^[•\-\●]\s*/, '').replace(/^\d+\.\s*/, '').trim());
         }
       });
-
-      if (currentStrand && currentSubStrand) currentStrand.subStrands.push(finalizeSubStrand(currentSubStrand));
-      if (currentStrand) strands.push(currentStrand);
-
-      diagnostics.push({ type: 'success', msg: `Parsed ${strands.length} strands, ${strands.reduce((sum, s) => sum + s.subStrands.length, 0)} sub-strands` });
-
-      const resources = extractFromTables(tables, 'Resources') || ['Textbooks', 'Charts', 'Maps', 'Digital devices'];
-      const assessment = extractFromTables(tables, 'Assessment') || ['Observation', 'Q&A', 'Written Exercise', 'Practical', 'Group Work'];
-
-      return { subject, grade: '', strands, resources, assessment, tablesFound: tables.length };
+      return items.length > 0 ? items : null;
     }
 
     function finalizeSubStrand(sub) {
